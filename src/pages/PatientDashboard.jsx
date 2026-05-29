@@ -27,6 +27,9 @@ export default function PatientDashboard() {
   const [invoices, setInvoices] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [claims, setClaims] = useState([]);
+  const [patientProfile, setPatientProfile] = useState(null);
+  const [surgeries, setSurgeries] = useState([]);
+  const [vaccinations, setVaccinations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Dynamic Route Tab Solver
@@ -96,6 +99,25 @@ export default function PatientDashboard() {
       .then(data => setClaims(data))
       .catch(() => {});
 
+    fetch('/api/patients', { headers })
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.length > 0) {
+          setPatientProfile(data[0]);
+        }
+      })
+      .catch(() => {});
+
+    fetch('/api/advanced/ot', { headers })
+      .then(res => res.json())
+      .then(data => setSurgeries(data))
+      .catch(() => {});
+
+    fetch('/api/advanced/vaccinations', { headers })
+      .then(res => res.json())
+      .then(data => setVaccinations(data))
+      .catch(() => {});
+
     fetch('/api/advanced/documents', { headers })
       .then(res => res.json())
       .then(data => {
@@ -108,6 +130,61 @@ export default function PatientDashboard() {
   useEffect(() => {
     loadData();
   }, [token]);
+
+  const getTimelineEvents = () => {
+    const events = [];
+    
+    // 1. Appointments
+    appointments.forEach(apt => {
+      events.push({
+        date: apt.date,
+        title: `${apt.type || 'Consultation'} with ${apt.doctor?.name || 'Dr. Sarah Jenkins'}`,
+        desc: `Status: ${apt.status}. Slot: ${apt.timeSlot}. Branch: ${apt.doctor?.branch || 'CarePulse Manhattan'}`,
+        icon: Calendar,
+        color: 'bg-brand-500',
+        timestamp: new Date(apt.date).getTime()
+      });
+    });
+
+    // 2. Lab Reports
+    labs.forEach(lab => {
+      events.push({
+        date: 'May 28, 2026',
+        title: `${lab.testName} Pathology Order`,
+        desc: `Status: ${lab.status}. Category: ${lab.category}. Priority: ${lab.priority || 'ROUTINE'}`,
+        icon: Activity,
+        color: 'bg-emerald-500',
+        timestamp: new Date().getTime() - 86400000
+      });
+    });
+
+    // 3. Prescriptions
+    prescriptions.forEach(p => {
+      events.push({
+        date: 'May 28, 2026',
+        title: `Prescription Rx Issued`,
+        desc: `Medication: ${p.medicines ? p.medicines.join(', ') : p.name || p.medicine}`,
+        icon: Pill,
+        color: 'bg-blue-500',
+        timestamp: new Date().getTime() - 86400000 * 2
+      });
+    });
+
+    // 4. Surgeries
+    surgeries.forEach(ot => {
+      events.push({
+        date: ot.date,
+        title: `${ot.procedure} Surgery Scheduled`,
+        desc: `Surgeon: ${ot.surgeon}. OT Room: ${ot.otRoom}. Status: ${ot.status}`,
+        icon: ShieldCheck,
+        color: 'bg-purple-500',
+        timestamp: new Date(ot.date).getTime()
+      });
+    });
+
+    // Sort chronologically descending
+    return events.sort((a, b) => b.timestamp - a.timestamp);
+  };
 
   // Appointment Actions
   const handleBook = (e) => {
@@ -295,23 +372,22 @@ export default function PatientDashboard() {
               <div className="glass-card p-6">
                 <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-5">Patient Clinical History Timeline</h2>
                 <div className="relative border-l border-slate-200 dark:border-slate-700 pl-6 ml-4 space-y-6">
-                  {[
-                    { date: 'Oct 24, 2026', title: 'Cardiology Consultation Booked', desc: 'Assigned to Dr. Sarah Jenkins. Teleconsultation enabled.', icon: Calendar, color: 'bg-brand-500' },
-                    { date: 'May 28, 2026', title: 'Complete Blood Count (CBC) Uploaded', desc: 'Status: COMPLETED. Normal values verified.', icon: Activity, color: 'bg-emerald-500' },
-                    { date: 'May 28, 2026', title: 'Prescription RX-001 Issued', desc: 'Amoxicillin 500mg, Paracetamol 650mg generated.', icon: Pill, color: 'bg-blue-500' },
-                    { date: 'Jan 15, 2026', title: 'Hepatitis B Vaccine Administered', desc: 'Dose 1 completed successfully.', icon: ShieldCheck, color: 'bg-purple-500' },
-                  ].map((event, idx) => (
-                    <div key={idx} className="relative">
-                      <div className={`absolute -left-[35px] top-0 w-7 h-7 rounded-full ${event.color} text-white flex items-center justify-center border-4 border-slate-50 dark:border-slate-950`}>
-                        <event.icon className="w-3.5 h-3.5" />
+                  {getTimelineEvents().length > 0 ? (
+                    getTimelineEvents().map((event, idx) => (
+                      <div key={idx} className="relative">
+                        <div className={`absolute -left-[35px] top-0 w-7 h-7 rounded-full ${event.color} text-white flex items-center justify-center border-4 border-slate-50 dark:border-slate-950`}>
+                          <event.icon className="w-3.5 h-3.5" />
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-bold text-slate-400">{event.date}</span>
+                          <h4 className="font-semibold text-slate-800 dark:text-white text-sm mt-0.5">{event.title}</h4>
+                          <p className="text-xs text-slate-500 mt-1 leading-relaxed">{event.desc}</p>
+                        </div>
                       </div>
-                      <div>
-                        <span className="text-[10px] font-bold text-slate-400">{event.date}</span>
-                        <h4 className="font-semibold text-slate-800 dark:text-white text-sm mt-0.5">{event.title}</h4>
-                        <p className="text-xs text-slate-500 mt-1 leading-relaxed">{event.desc}</p>
-                      </div>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p className="text-xs text-slate-400 italic">No clinical history timeline available.</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -321,40 +397,42 @@ export default function PatientDashboard() {
               <div className="glass-card p-6">
                 <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Medication Reminders</h2>
                 <div className="space-y-3">
-                  {[
-                    { name: 'Amoxicillin 500mg', instructions: '1 capsule • Twice a day (After food)', time: '09:00 AM' },
-                    { name: 'Paracetamol 650mg', instructions: '1 tablet • As needed for pain relief', time: '12:30 PM' },
-                  ].map((med, idx) => (
-                    <div key={idx} className="p-3 border border-slate-100 dark:border-slate-800 rounded-xl">
-                      <p className="text-sm font-semibold text-slate-800 dark:text-white">{med.name}</p>
-                      <p className="text-xs text-slate-500 mt-0.5">{med.instructions}</p>
-                      <span className="inline-flex items-center gap-1 text-[10px] text-brand-600 dark:text-brand-400 font-bold mt-2">
-                        <Clock className="w-3 h-3" /> Due {med.time}
-                      </span>
-                    </div>
-                  ))}
+                  {prescriptions.flatMap(rx => rx.medicines || []).length > 0 ? (
+                    prescriptions.flatMap(rx => rx.medicines || []).map((med, idx) => (
+                      <div key={idx} className="p-3 border border-slate-100 dark:border-slate-800 rounded-xl">
+                        <p className="text-sm font-semibold text-slate-800 dark:text-white">{med}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">1 tablet/capsule • As prescribed by clinician</p>
+                        <span className="inline-flex items-center gap-1 text-[10px] text-brand-600 dark:text-brand-400 font-bold mt-2">
+                          <Clock className="w-3 h-3" /> Active Course
+                        </span>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs text-slate-400 italic">No active medication reminders.</p>
+                  )}
                 </div>
               </div>
 
               <div className="glass-card p-6">
                 <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-4">Vaccination Status</h2>
                 <div className="space-y-3">
-                  {[
-                    { vaccine: 'Hepatitis B', dose: 'Dose 1 of 3', status: 'COMPLETED', date: 'Jan 15, 2026' },
-                    { vaccine: 'Tetanus Toxoid', dose: 'Booster Dose', status: 'DUE', date: 'Jul 20, 2026' },
-                  ].map((vac, idx) => (
-                    <div key={idx} className="flex justify-between items-center p-3 border border-slate-100 dark:border-slate-800 rounded-xl">
-                      <div>
-                        <p className="text-sm font-semibold text-slate-800 dark:text-white">{vac.vaccine}</p>
-                        <p className="text-xs text-slate-500 mt-0.5">{vac.dose} · {vac.date}</p>
+                  {vaccinations.length > 0 ? (
+                    vaccinations.map((vac, idx) => (
+                      <div key={idx} className="flex justify-between items-center p-3 border border-slate-100 dark:border-slate-800 rounded-xl">
+                        <div>
+                          <p className="text-sm font-semibold text-slate-800 dark:text-white">{vac.vaccine}</p>
+                          <p className="text-xs text-slate-500 mt-0.5">Dose {vac.doseNo} · {vac.dateAdministered}</p>
+                        </div>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                          new Date(vac.nextDueDate) > new Date() ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' : 'bg-amber-50 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400'
+                        }`}>
+                          {new Date(vac.nextDueDate) > new Date() ? 'COMPLETED' : 'BOOSTER DUE'}
+                        </span>
                       </div>
-                      <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                        vac.status === 'COMPLETED' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' : 'bg-amber-50 text-amber-700 dark:bg-amber-500/20 dark:text-amber-400'
-                      }`}>
-                        {vac.status}
-                      </span>
-                    </div>
-                  ))}
+                    ))
+                  ) : (
+                    <p className="text-xs text-slate-400 italic">No vaccinations recorded.</p>
+                  )}
                 </div>
               </div>
             </div>
@@ -493,25 +571,50 @@ export default function PatientDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="p-4 border border-slate-100 dark:border-slate-800 rounded-xl">
               <h3 className="font-bold text-slate-800 dark:text-white text-sm border-b border-slate-100 dark:border-slate-800 pb-2 mb-3">Chronic Diseases & Allergies</h3>
-              <ul className="space-y-2">
-                <li className="flex justify-between items-center text-xs">
-                  <span className="text-slate-500 dark:text-slate-300 font-medium">Diabetes Registry:</span>
-                  <span className="font-bold text-brand-600">Active - Under Cardiology Control</span>
-                </li>
-                <li className="flex justify-between items-center text-xs">
-                  <span className="text-slate-500 dark:text-slate-300 font-medium">Penicillin Allergy:</span>
-                  <span className="font-bold text-rose-500">Severe Anaphylaxis Risk</span>
-                </li>
-              </ul>
+              
+              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Chronic Diseases</p>
+              {patientProfile?.chronicDiseases && patientProfile.chronicDiseases.length > 0 ? (
+                <ul className="space-y-2 mb-4">
+                  {patientProfile.chronicDiseases.map((disease, idx) => (
+                    <li key={idx} className="flex justify-between items-center text-xs">
+                      <span className="text-slate-500 dark:text-slate-300 font-medium">{disease} Registry:</span>
+                      <span className="font-bold text-brand-600">Active - Under Cardiology Control</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-slate-400 italic mb-4">No chronic conditions recorded.</p>
+              )}
+
+              <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-2">Allergies</p>
+              {patientProfile?.allergies && patientProfile.allergies.length > 0 ? (
+                <ul className="space-y-2">
+                  {patientProfile.allergies.map((allergy, idx) => (
+                    <li key={idx} className="flex justify-between items-center text-xs">
+                      <span className="text-slate-500 dark:text-slate-300 font-medium">{allergy} Allergy:</span>
+                      <span className="font-bold text-rose-500">Severe Anaphylaxis Risk</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-slate-400 italic">No allergies recorded.</p>
+              )}
             </div>
+            
             <div className="p-4 border border-slate-100 dark:border-slate-800 rounded-xl">
               <h3 className="font-bold text-slate-800 dark:text-white text-sm border-b border-slate-100 dark:border-slate-800 pb-2 mb-3">Surgical History</h3>
-              <ul className="space-y-2">
-                <li className="flex justify-between items-center text-xs">
-                  <span className="text-slate-500 dark:text-slate-300 font-medium">Coronary Angioplasty:</span>
-                  <span className="font-semibold text-slate-600 dark:text-slate-300">COMPLETED - Oct 2025</span>
-                </li>
-              </ul>
+              {surgeries && surgeries.length > 0 ? (
+                <ul className="space-y-2">
+                  {surgeries.map((ot, idx) => (
+                    <li key={idx} className="flex justify-between items-center text-xs">
+                      <span className="text-slate-500 dark:text-slate-300 font-medium">{ot.procedure}:</span>
+                      <span className="font-semibold text-slate-600 dark:text-slate-300">{ot.status} - {ot.date}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-xs text-slate-400 italic">No surgical history available.</p>
+              )}
             </div>
           </div>
         </div>
@@ -524,29 +627,33 @@ export default function PatientDashboard() {
           <div className="lg:col-span-2 glass-card p-6">
             <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-5">My Diagnostic Pathology Reports</h2>
             <div className="space-y-4">
-              {labs.filter(l => l.patientId === patientID).map(lab => (
-                <div key={lab.id} className="p-4 border border-slate-100 dark:border-slate-800 rounded-xl flex justify-between items-start gap-4">
-                  <div>
-                    <span className="font-mono text-[10px] text-brand-500 font-bold uppercase">#{lab.id}</span>
-                    <h4 className="font-semibold text-slate-800 dark:text-white text-sm mt-1">{lab.testName}</h4>
-                    <p className="text-xs text-slate-500">{lab.category} • Status: {lab.status}</p>
+              {labs.filter(l => l.patientId === patientID).length > 0 ? (
+                labs.filter(l => l.patientId === patientID).map(lab => (
+                  <div key={lab.id} className="p-4 border border-slate-100 dark:border-slate-800 rounded-xl flex justify-between items-start gap-4">
+                    <div>
+                      <span className="font-mono text-[10px] text-brand-500 font-bold uppercase">#{lab.id}</span>
+                      <h4 className="font-semibold text-slate-800 dark:text-white text-sm mt-1">{lab.testName}</h4>
+                      <p className="text-xs text-slate-500">{lab.category} • Status: {lab.status}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      {lab.status === 'COMPLETED' ? (
+                        <>
+                          <button onClick={() => explainLab(lab.testName)} className="btn-secondary py-1.5 px-3 text-xs flex items-center gap-1">
+                            <Bot className="w-3.5 h-3.5 text-brand-600" /> Explain
+                          </button>
+                          <button onClick={() => showToast('Downloading PDF diagnostic file...', 'success')} className="btn-primary py-1.5 px-3 text-xs flex items-center gap-1">
+                            <Download className="w-3.5 h-3.5" /> PDF
+                          </button>
+                        </>
+                      ) : (
+                        <span className="text-xs text-slate-400 italic">Awaiting Lab verification</span>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex gap-2">
-                    {lab.status === 'COMPLETED' ? (
-                      <>
-                        <button onClick={() => explainLab(lab.testName)} className="btn-secondary py-1.5 px-3 text-xs flex items-center gap-1">
-                          <Bot className="w-3.5 h-3.5 text-brand-600" /> Explain
-                        </button>
-                        <button onClick={() => showToast('Downloading PDF diagnostic file...', 'success')} className="btn-primary py-1.5 px-3 text-xs flex items-center gap-1">
-                          <Download className="w-3.5 h-3.5" /> PDF
-                        </button>
-                      </>
-                    ) : (
-                      <span className="text-xs text-slate-400 italic">Awaiting Lab verification</span>
-                    )}
-                  </div>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-sm text-slate-400 italic">No lab reports found.</p>
+              )}
             </div>
           </div>
 
@@ -571,35 +678,39 @@ export default function PatientDashboard() {
         <div className="glass-card p-6">
           <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-5">Active Digital e-Prescriptions (Rx)</h2>
           <div className="space-y-4">
-            {prescriptions.map(rx => (
-              <div key={rx.id} className="p-5 border border-slate-100 dark:border-slate-800 rounded-xl">
-                <div className="flex justify-between items-start gap-2 mb-3">
-                  <div>
-                    <span className="font-mono text-[10px] text-brand-500 font-bold uppercase">{rx.id}</span>
-                    <h3 className="font-bold text-slate-900 dark:text-white mt-0.5">Cardiology Clinical Script</h3>
-                    <p className="text-xs text-slate-500">Issued by: {rx.doctor} · Status: {rx.status}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <button onClick={() => window.print()} className="btn-secondary p-2 rounded-xl" title="Print Script"><Printer className="w-4 h-4" /></button>
-                    <button onClick={() => showToast('Downloading PDF clinical Rx...', 'success')} className="btn-primary py-1.5 px-3 text-xs flex items-center gap-1.5"><Download className="w-3.5 h-3.5" /> PDF</button>
-                  </div>
-                </div>
-                <div className="space-y-2 mt-4">
-                  {rx.medicines.map((m, idx) => (
-                    <div key={idx} className="flex justify-between items-center p-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 rounded-xl">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-brand-50 dark:bg-brand-900/30 text-brand-600 rounded-lg"><Pill className="w-4 h-4" /></div>
-                        <div>
-                          <p className="text-sm font-semibold text-slate-800 dark:text-white">{m}</p>
-                          <p className="text-xs text-slate-500">1 capsule · Twice a day (After food)</p>
-                        </div>
-                      </div>
-                      <span className="text-[10px] text-brand-600 dark:text-brand-400 font-bold bg-brand-50 dark:bg-brand-500/10 px-2 py-0.5 rounded-full">5 Days Course</span>
+            {prescriptions.length > 0 ? (
+              prescriptions.map(rx => (
+                <div key={rx.id} className="p-5 border border-slate-100 dark:border-slate-800 rounded-xl">
+                  <div className="flex justify-between items-start gap-2 mb-3">
+                    <div>
+                      <span className="font-mono text-[10px] text-brand-500 font-bold uppercase">{rx.id}</span>
+                      <h3 className="font-bold text-slate-900 dark:text-white mt-0.5">Cardiology Clinical Script</h3>
+                      <p className="text-xs text-slate-500">Issued by: {rx.doctor} · Status: {rx.status}</p>
                     </div>
-                  ))}
+                    <div className="flex gap-2">
+                      <button onClick={() => window.print()} className="btn-secondary p-2 rounded-xl" title="Print Script"><Printer className="w-4 h-4" /></button>
+                      <button onClick={() => showToast('Downloading PDF clinical Rx...', 'success')} className="btn-primary py-1.5 px-3 text-xs flex items-center gap-1.5"><Download className="w-3.5 h-3.5" /> PDF</button>
+                    </div>
+                  </div>
+                  <div className="space-y-2 mt-4">
+                    {rx.medicines.map((m, idx) => (
+                      <div key={idx} className="flex justify-between items-center p-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800/80 rounded-xl">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-brand-50 dark:bg-brand-900/30 text-brand-600 rounded-lg"><Pill className="w-4 h-4" /></div>
+                          <div>
+                            <p className="text-sm font-semibold text-slate-800 dark:text-white">{m}</p>
+                            <p className="text-xs text-slate-500">1 capsule · Twice a day (After food)</p>
+                          </div>
+                        </div>
+                        <span className="text-[10px] text-brand-600 dark:text-brand-400 font-bold bg-brand-50 dark:bg-brand-500/10 px-2 py-0.5 rounded-full">5 Days Course</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-sm text-slate-400 italic">No prescriptions found.</p>
+            )}
           </div>
         </div>
       )}
@@ -609,19 +720,25 @@ export default function PatientDashboard() {
         <div className="glass-card p-6">
           <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-5">Outstanding Invoices Ledger</h2>
           <div className="space-y-4">
-            {invoices.filter(i => i.patientId === patientID).map(inv => (
-              <div key={inv.id} className="p-4 border border-slate-100 dark:border-slate-800 rounded-xl flex justify-between items-center gap-4">
-                <div>
-                  <span className="font-mono text-xs text-brand-500 font-bold uppercase">#{inv.id}</span>
-                  <h4 className="font-semibold text-slate-800 dark:text-white text-sm mt-1">{inv.type} Service Ledger</h4>
-                  <p className="text-xs text-slate-500">Settled via BlueCross Insurance</p>
+            {invoices.filter(i => i.patientId === patientID).length > 0 ? (
+              invoices.filter(i => i.patientId === patientID).map(inv => (
+                <div key={inv.id} className="p-4 border border-slate-100 dark:border-slate-800 rounded-xl flex justify-between items-center gap-4">
+                  <div>
+                    <span className="font-mono text-xs text-brand-500 font-bold uppercase">#{inv.id}</span>
+                    <h4 className="font-semibold text-slate-800 dark:text-white text-sm mt-1">{inv.type} Service Ledger</h4>
+                    <p className="text-xs text-slate-500">Settled via BlueCross Insurance</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-base font-bold text-slate-900 dark:text-white">${inv.totalAmount}</p>
+                    <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full mt-2 inline-block ${
+                      inv.status === 'PAID' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400' : 'bg-rose-50 text-rose-700 dark:bg-rose-500/20 dark:text-rose-400'
+                    }`}>{inv.status}</span>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-base font-bold text-slate-900 dark:text-white">${inv.totalAmount}</p>
-                  <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 mt-2 inline-block">Paid</span>
-                </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-sm text-slate-400 italic">No outstanding or settled invoices found.</p>
+            )}
           </div>
         </div>
       )}
@@ -632,48 +749,94 @@ export default function PatientDashboard() {
           <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-5">Patient Notification Alarms</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
-              { title: 'Medicine: Amoxicillin 500mg', time: '09:00 AM', type: 'Clinical Script Dose' },
-              { title: 'Teleconsultation Slot: General Checkup', time: 'Oct 24, 10:00 AM', type: 'Upcoming Doctor Visit' },
-              { title: 'Booster Dose: Tetanus Toxoid', time: 'Jul 20, 2026', type: 'Vaccination Schedule Alarm' },
-            ].map((rem, idx) => (
-              <div key={idx} className="p-4 border border-slate-100 dark:border-slate-800 rounded-xl flex items-start gap-3">
-                <div className="p-2.5 bg-brand-50 dark:bg-brand-900/30 text-brand-600 rounded-xl"><Bell className="w-5 h-5" /></div>
-                <div>
-                  <p className="text-sm font-semibold text-slate-800 dark:text-white">{rem.title}</p>
-                  <p className="text-xs text-slate-500 mt-0.5">{rem.type}</p>
-                  <span className="text-[10px] text-slate-400 font-bold mt-2 inline-block">{rem.time}</span>
+              ...prescriptions.flatMap(rx => rx.medicines || []).map(med => ({
+                title: `Medicine Dose: ${med}`,
+                time: 'Active Prescribed Course',
+                type: 'e-Prescription dosage frequency check'
+              })),
+              ...appointments.filter(a => a.status === 'SCHEDULED').map(apt => ({
+                title: `${apt.type} with ${apt.doctor?.name || 'Dr. Sarah Jenkins'}`,
+                time: `Scheduled: ${apt.date} at ${apt.timeSlot}`,
+                type: 'Upcoming Teleconsultation Visit'
+              })),
+              ...vaccinations.map(vac => ({
+                title: `Vaccine: ${vac.vaccine} (Dose #${vac.doseNo})`,
+                time: `Booster Due: ${vac.nextDueDate}`,
+                type: 'Immunization Schedule Alarm'
+              }))
+            ].length > 0 ? (
+              [
+                ...prescriptions.flatMap(rx => rx.medicines || []).map(med => ({
+                  title: `Medicine Dose: ${med}`,
+                  time: 'Active Prescribed Course',
+                  type: 'e-Prescription dosage frequency check'
+                })),
+                ...appointments.filter(a => a.status === 'SCHEDULED').map(apt => ({
+                  title: `${apt.type} with ${apt.doctor?.name || 'Dr. Sarah Jenkins'}`,
+                  time: `Scheduled: ${apt.date} at ${apt.timeSlot}`,
+                  type: 'Upcoming Teleconsultation Visit'
+                })),
+                ...vaccinations.map(vac => ({
+                  title: `Vaccine: ${vac.vaccine} (Dose #${vac.doseNo})`,
+                  time: `Booster Due: ${vac.nextDueDate}`,
+                  type: 'Immunization Schedule Alarm'
+                }))
+              ].map((rem, idx) => (
+                <div key={idx} className="p-4 border border-slate-100 dark:border-slate-800 rounded-xl flex items-start gap-3">
+                  <div className="p-2.5 bg-brand-50 dark:bg-brand-900/30 text-brand-600 rounded-xl"><Bell className="w-5 h-5" /></div>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-800 dark:text-white">{rem.title}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{rem.type}</p>
+                    <span className="text-[10px] text-slate-400 font-bold mt-2 inline-block">{rem.time}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-sm text-slate-400 italic">No active alarms or reminders recorded.</p>
+            )}
           </div>
         </div>
       )}
 
       {/* ─────────────────── TAB: QUEUE STATUS ─────────────────── */}
-      {activeTab === 'queue' && (
-        <div className="glass-card p-8 flex flex-col items-center justify-center max-w-md mx-auto text-center border-l-4 border-l-brand-500">
-          <Clock className="w-12 h-12 text-brand-500 animate-pulse mb-4" />
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white">Active Queue Telemetry</h2>
-          <p className="text-slate-500 text-xs mt-1">Live tracking for Cardiology OPD</p>
+      {activeTab === 'queue' && (() => {
+        const activeApt = appointments.find(a => a.status === 'SCHEDULED');
+        const tokenMatch = activeApt?.notes?.match(/A\d+/);
+        const tokenNo = tokenMatch ? tokenMatch[0] : (activeToken || null);
+        const doctorName = activeApt?.doctor?.name || 'Dr. Sarah Jenkins';
+        
+        return (
+          <div className="glass-card p-8 flex flex-col items-center justify-center max-w-md mx-auto text-center border-l-4 border-l-brand-500">
+            <Clock className="w-12 h-12 text-brand-500 animate-pulse mb-4" />
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Active Queue Telemetry</h2>
+            
+            {activeApt || tokenNo ? (
+              <>
+                <p className="text-slate-500 text-xs mt-1">Live tracking for {activeApt?.type || 'Consultation'}</p>
 
-          <div className="grid grid-cols-2 gap-4 w-full mt-6 mb-6">
-            <div className="p-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl">
-              <span className="text-[10px] font-bold text-slate-400 uppercase">Your Token</span>
-              <p className="text-3xl font-extrabold text-brand-600 mt-1">A105</p>
-            </div>
-            <div className="p-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl">
-              <span className="text-[10px] font-bold text-slate-400 uppercase">Current Serving</span>
-              <p className="text-3xl font-extrabold text-slate-800 dark:text-white mt-1">A097</p>
-            </div>
-          </div>
+                <div className="grid grid-cols-2 gap-4 w-full mt-6 mb-6">
+                  <div className="p-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Your Token</span>
+                    <p className="text-3xl font-extrabold text-brand-600 mt-1">{tokenNo || 'A105'}</p>
+                  </div>
+                  <div className="p-4 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase">Current Serving</span>
+                    <p className="text-3xl font-extrabold text-slate-800 dark:text-white mt-1">A097</p>
+                  </div>
+                </div>
 
-          <div className="space-y-2 w-full text-left p-4 border border-slate-100 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-900/30">
-            <div className="flex justify-between text-xs"><span className="text-slate-500">Queue Position:</span><span className="font-bold text-slate-800 dark:text-white">8 Patients Ahead</span></div>
-            <div className="flex justify-between text-xs mt-1.5"><span className="text-slate-500">Estimated Wait:</span><span className="font-bold text-brand-600">24 Minutes</span></div>
-            <div className="flex justify-between text-xs mt-1.5"><span className="text-slate-500">Consulting Specialist:</span><span className="font-bold text-slate-800 dark:text-white">Dr. Sarah Jenkins</span></div>
+                <div className="space-y-2 w-full text-left p-4 border border-slate-100 dark:border-slate-800 rounded-xl bg-slate-50/50 dark:bg-slate-900/30">
+                  <div className="flex justify-between text-xs"><span className="text-slate-500">Queue Position:</span><span className="font-bold text-slate-800 dark:text-white">8 Patients Ahead</span></div>
+                  <div className="flex justify-between text-xs mt-1.5"><span className="text-slate-500">Estimated Wait:</span><span className="font-bold text-brand-600">24 Minutes</span></div>
+                  <div className="flex justify-between text-xs mt-1.5"><span className="text-slate-500">Consulting Specialist:</span><span className="font-bold text-slate-800 dark:text-white">{doctorName}</span></div>
+                </div>
+              </>
+            ) : (
+              <p className="text-sm text-slate-400 italic mt-4">No active queue telemetry. Book an appointment to join the live waitlist.</p>
+            )}
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ─────────────────── TAB: QR CARD ─────────────────── */}
       {activeTab === 'qr' && (
@@ -692,8 +855,8 @@ export default function PatientDashboard() {
           <div className="w-full text-left space-y-2 border-t border-slate-100 dark:border-slate-800 pt-4">
             <div className="flex justify-between text-xs"><span className="text-slate-400">Patient Name:</span><span className="font-bold text-slate-800 dark:text-white">{patientName}</span></div>
             <div className="flex justify-between text-xs"><span className="text-slate-400">MRN:</span><span className="font-bold text-brand-600">{patientMRN}</span></div>
-            <div className="flex justify-between text-xs"><span className="text-slate-400">Blood Group:</span><span className="font-bold text-slate-800 dark:text-white">O+</span></div>
-            <div className="flex justify-between text-xs"><span className="text-slate-400">Emergency:</span><span className="font-bold text-slate-800 dark:text-white">+1 555-0102</span></div>
+            <div className="flex justify-between text-xs"><span className="text-slate-400">Blood Group:</span><span className="font-bold text-slate-800 dark:text-white">{patientProfile?.bloodGroup || 'O+'}</span></div>
+            <div className="flex justify-between text-xs"><span className="text-slate-400">Emergency:</span><span className="font-bold text-slate-800 dark:text-white">{patientProfile?.emergencyCont || '+1 555-0102'}</span></div>
           </div>
         </div>
       )}
@@ -767,7 +930,13 @@ export default function PatientDashboard() {
           <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-5">Digital TPA & Active Coverage</h2>
           <div className="space-y-4">
             {[
-              { provider: 'BlueCross Health Insurance', policy: 'POL-12345', limit: '$15,000 Cap', used: '$380.00 Settled', status: 'ACTIVE' }
+              { 
+                provider: patientProfile?.insuranceProvider || 'No Insurance Registered', 
+                policy: patientProfile?.insuranceNumber || 'N/A', 
+                limit: '$15,000 Cap', 
+                used: '$380.00 Settled', 
+                status: patientProfile?.insuranceProvider ? 'ACTIVE' : 'INACTIVE' 
+              }
             ].map((ins, idx) => (
               <div key={idx} className="p-5 border border-slate-100 dark:border-slate-800 rounded-xl">
                 <div className="flex justify-between items-start gap-2">
@@ -778,12 +947,16 @@ export default function PatientDashboard() {
                       <p className="text-xs text-slate-500 mt-1">Policy: {ins.policy} · Limit: {ins.limit}</p>
                     </div>
                   </div>
-                  <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 rounded-full">{ins.status}</span>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                    ins.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20' : 'bg-rose-50 text-rose-700 dark:bg-rose-500/20'
+                  }`}>{ins.status}</span>
                 </div>
-                <div className="flex justify-between items-center mt-5 text-xs text-slate-500 border-t border-slate-100 dark:border-slate-800/80 pt-3">
-                  <span>Co-pay ratio: 10/90</span>
-                  <span className="font-bold text-slate-700 dark:text-slate-300">Used today: {ins.used}</span>
-                </div>
+                {ins.status === 'ACTIVE' && (
+                  <div className="flex justify-between items-center mt-5 text-xs text-slate-500 border-t border-slate-100 dark:border-slate-800/80 pt-3">
+                    <span>Co-pay ratio: 10/90</span>
+                    <span className="font-bold text-slate-700 dark:text-slate-300">Used today: {ins.used}</span>
+                  </div>
+                )}
               </div>
             ))}
           </div>
