@@ -1,0 +1,265 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  HOSPITAL_DIRECTOR
+  BRANCH_ADMIN
+  DOCTOR
+  RECEPTIONIST
+  NURSE
+  LAB_TECHNICIAN
+  RADIOLOGIST
+  PHARMACIST
+  BILLING_STAFF
+  PATIENT
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  firstName String
+  lastName  String
+  phone     String?
+  role      Role
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  branchId     String?
+  branch       HospitalBranch? @relation(fields: [branchId], references: [id])
+  departmentId String?
+  department   Department?     @relation(fields: [departmentId], references: [id])
+
+  doctorProfile  DoctorProfile?
+  patientProfile PatientProfile?
+}
+
+model HospitalBranch {
+  id          String   @id @default(uuid())
+  name        String
+  address     String
+  city        String
+  state       String
+  contactNum  String
+  createdAt   DateTime @default(now())
+  
+  users       User[]
+  departments Department[]
+  patients    PatientProfile[]
+  admissions  Admission[]
+}
+
+model Department {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  branchId    String
+  branch      HospitalBranch @relation(fields: [branchId], references: [id])
+  
+  users       User[]
+}
+
+model DoctorProfile {
+  id             String   @id @default(uuid())
+  userId         String   @unique
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  specialization String
+  licenseNumber  String
+  consultationFee Float
+  
+  appointments   Appointment[]
+  prescriptions  Prescription[]
+  encounters     Encounter[]
+  admissions     Admission[]
+}
+
+model PatientProfile {
+  id            String   @id @default(uuid())
+  userId        String?  @unique
+  user          User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  mrn           String   @unique // Medical Record Number
+  branchId      String
+  branch        HospitalBranch @relation(fields: [branchId], references: [id])
+  
+  firstName     String
+  lastName      String
+  dob           DateTime
+  gender        String
+  bloodGroup    String?
+  phone         String
+  address       String
+  emergencyCont String?
+  
+  allergies     String[]
+  chronicDiseases String[]
+  
+  appointments  Appointment[]
+  encounters    Encounter[]
+  admissions    Admission[]
+  invoices      Invoice[]
+  labRequests   LabRequest[]
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CHECKED_IN
+  IN_CONSULTATION
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+model Appointment {
+  id            String   @id @default(uuid())
+  patientId     String
+  patient       PatientProfile @relation(fields: [patientId], references: [id])
+  doctorId      String
+  doctor        DoctorProfile  @relation(fields: [doctorId], references: [id])
+  
+  date          DateTime
+  timeSlot      String
+  status        AppointmentStatus @default(SCHEDULED)
+  type          String
+  notes         String?
+  
+  encounter     Encounter?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Encounter {
+  id            String   @id @default(uuid())
+  patientId     String
+  patient       PatientProfile @relation(fields: [patientId], references: [id])
+  doctorId      String
+  doctor        DoctorProfile  @relation(fields: [doctorId], references: [id])
+  appointmentId String?  @unique
+  appointment   Appointment?   @relation(fields: [appointmentId], references: [id])
+  
+  systolicBp    Int?
+  diastolicBp   Int?
+  heartRate     Int?
+  temperature   Float?
+  weight        Float?
+  
+  chiefComplaint String
+  observations   String
+  diagnosis      String[]
+  treatmentPlan  String
+  
+  prescriptions  Prescription[]
+  labRequests    LabRequest[]
+  
+  createdAt     DateTime @default(now())
+}
+
+model Prescription {
+  id            String   @id @default(uuid())
+  encounterId   String
+  encounter     Encounter @relation(fields: [encounterId], references: [id])
+  doctorId      String
+  doctor        DoctorProfile @relation(fields: [doctorId], references: [id])
+  
+  notes         String?
+  medicines     PrescriptionMedicine[]
+  
+  createdAt     DateTime @default(now())
+}
+
+model PrescriptionMedicine {
+  id             String   @id @default(uuid())
+  prescriptionId String
+  prescription   Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
+  medicineName   String
+  dosage         String
+  frequency      String
+  duration       String
+  instructions   String?
+}
+
+model LabRequest {
+  id            String   @id @default(uuid())
+  patientId     String
+  patient       PatientProfile @relation(fields: [patientId], references: [id])
+  encounterId   String?
+  encounter     Encounter?     @relation(fields: [encounterId], references: [id])
+  
+  testName      String
+  category      String
+  status        String @default("PENDING")
+  results       String?
+  resultFileUrl String?
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Admission {
+  id            String   @id @default(uuid())
+  patientId     String
+  patient       PatientProfile @relation(fields: [patientId], references: [id])
+  branchId      String
+  branch        HospitalBranch @relation(fields: [branchId], references: [id])
+  primaryDoctorId String
+  primaryDoctor DoctorProfile @relation(fields: [primaryDoctorId], references: [id])
+  
+  wardId        String
+  ward          Ward     @relation(fields: [wardId], references: [id])
+  bedNumber     String
+  
+  admissionDate DateTime @default(now())
+  dischargeDate DateTime?
+  status        String   @default("ADMITTED")
+  
+  reasonForAdmission String
+  dischargeSummary   String?
+}
+
+model Ward {
+  id            String   @id @default(uuid())
+  name          String
+  type          String
+  capacity      Int
+  branchId      String
+  
+  admissions    Admission[]
+}
+
+model Invoice {
+  id            String   @id @default(uuid())
+  patientId     String
+  patient       PatientProfile @relation(fields: [patientId], references: [id])
+  
+  type          String
+  totalAmount   Float
+  discount      Float    @default(0)
+  netAmount     Float
+  status        String   @default("UNPAID")
+  
+  items         InvoiceItem[]
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model InvoiceItem {
+  id            String   @id @default(uuid())
+  invoiceId     String
+  invoice       Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  description   String
+  quantity      Int      @default(1)
+  unitPrice     Float
+  total         Float
+}
