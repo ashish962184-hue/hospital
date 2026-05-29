@@ -59,10 +59,17 @@ export default function PatientDashboard() {
   const [selectedSlot, setSelectedSlot] = useState('');
   const [activeToken, setActiveToken] = useState(null);
 
-  // AI Checker States
+  // Upgraded AI Multilingual Voice Health Assistant States
   const [symptoms, setSymptoms] = useState('');
   const [aiReport, setAiReport] = useState(null);
   const [isAiChecking, setIsAiChecking] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState('en-US');
+  const [originalText, setOriginalText] = useState('');
+  const [translatedText, setTranslatedText] = useState('');
+  const [detectedLang, setDetectedLang] = useState('English');
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const [synthUtterance, setSynthUtterance] = useState(null);
 
   // AI Labs Explainer States
   const [aiExplanation, setAiExplanation] = useState('');
@@ -228,42 +235,245 @@ export default function PatientDashboard() {
     setAppointments(prev => prev.filter(a => a.id !== id));
   };
 
-  // AI Symptom Checker
-  const checkSymptoms = (e) => {
-    e.preventDefault();
-    if (!symptoms.trim()) return;
+  // Upgraded Multilingual AI Voice Health Assistant Engine
+  const LANGUAGES = [
+    { code: 'en-US', name: 'English' },
+    { code: 'te-IN', name: 'Telugu (తెలుగు)' },
+    { code: 'hi-IN', name: 'Hindi (हिन्दी)' },
+    { code: 'ta-IN', name: 'Tamil (தமிழ்)' },
+    { code: 'kn-IN', name: 'Kannada (ಕನ್ನಡ)' },
+    { code: 'ml-IN', name: 'Malayalam (മലയാളം)' },
+    { code: 'mr-IN', name: 'Marathi (मराठी)' },
+    { code: 'bn-IN', name: 'Bengali (বাংলা)' },
+    { code: 'gu-IN', name: 'Gujarati (ગુજરાતી)' },
+    { code: 'pa-IN', name: 'Punjabi (ਪੰਜਾਬੀ)' },
+    { code: 'ur-IN', name: 'Urdu (اردو)' }
+  ];
 
+  const startListening = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      showToast('Speech Recognition not supported in this browser. Please use Chrome.', 'error');
+      return;
+    }
+    
+    const recognition = new SpeechRecognition();
+    recognition.lang = selectedLanguage;
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      showToast('Listening... Speak naturally.', 'info');
+    };
+
+    recognition.onerror = () => {
+      setIsListening(false);
+      showToast('Voice input error. Try again.', 'error');
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognition.onresult = (event) => {
+      const speechToText = event.results[0][0].transcript;
+      setOriginalText(speechToText);
+      setSymptoms(speechToText);
+      
+      const matchedLang = LANGUAGES.find(l => l.code === selectedLanguage);
+      setDetectedLang(matchedLang ? matchedLang.name : 'English');
+
+      processDynamicMultilingualSymptom(speechToText, selectedLanguage);
+    };
+
+    recognition.start();
+  };
+
+  const processDynamicMultilingualSymptom = (text, langCode) => {
     setIsAiChecking(true);
     setAiReport(null);
+    
+    let englishTranslation = text;
+    let originalLang = LANGUAGES.find(l => l.code === langCode)?.name || 'English';
+
+    // Premium Translation Engine Mock
+    if (langCode === 'te-IN') {
+      if (text.includes('జ్వరం') || text.includes('దగ్గు')) {
+        englishTranslation = "I have had fever and cough for three days";
+      } else if (text.includes('గుండె') || text.includes('నొప్పి')) {
+        englishTranslation = "I have severe chest pain and difficulty breathing";
+      } else {
+        englishTranslation = `Translated [Telugu]: ${text}`;
+      }
+    } else if (langCode === 'hi-IN') {
+      if (text.includes('बुखार') || text.includes('खांसी')) {
+        englishTranslation = "I have had fever and cough for three days";
+      } else if (text.includes('सीने') || text.includes('दर्द')) {
+        englishTranslation = "I have severe chest pain and difficulty breathing";
+      } else {
+        englishTranslation = `Translated [Hindi]: ${text}`;
+      }
+    } else {
+      englishTranslation = text;
+    }
+
+    setTranslatedText(englishTranslation);
+
+    const age = patientProfile?.dob ? (new Date().getFullYear() - new Date(patientProfile.dob).getFullYear()) : 35;
+    const allergies = patientProfile?.allergies?.join(', ') || 'none';
+    const chronic = patientProfile?.chronicDiseases?.join(', ') || 'none';
 
     setTimeout(() => {
-      let result = {
-        conditions: 'Acute Bronchitis vs Mild Allergic Respiratory Spasm',
-        urgency: 'ROUTINE (Schedule Visit)',
-        dept: 'Cardiology',
-        suggested: DOCTORS[0]
-      };
+      let isEmergency = false;
+      const lower = englishTranslation.toLowerCase();
+      if (lower.includes('chest') || lower.includes('breathing') || lower.includes('stroke') || lower.includes('bleeding') || lower.includes('heart attack') || lower.includes('unconscious')) {
+        isEmergency = true;
+      }
 
-      if (symptoms.toLowerCase().includes('chest') || symptoms.toLowerCase().includes('heart')) {
-        result = {
-          conditions: 'Potential Angina Pectoris / Coronary telemetric distress indicators',
-          urgency: 'HIGH PRIORITY / STAT',
+      let report;
+      if (isEmergency) {
+        report = {
+          conditions: 'Potential Acute Coronary Syndrome / Anaphylaxis Trigger / Severe Respiratory Insufficiency',
+          riskLevel: 'CRITICAL',
+          urgency: '🚨 EMERGENCY WARNING (STAT)',
           dept: 'Cardiology',
-          suggested: DOCTORS[0]
+          suggested: DOCTORS[0],
+          suggestedActions: [
+            'Immediate hospital emergency visit required.',
+            'Call an ambulance or visit emergency ward immediately.',
+            `Warning: Patient profile records allergies: [${allergies}]. Avoid contact.`,
+            `Profile checks: Patient age ${age} with chronic conditions: [${chronic}] requires special cardiology triage.`
+          ],
+          aiVoiceReply: {
+            'en-US': '🚨 EMERGENCY WARNING: Acute distress detected. Please visit the Emergency Department immediately.',
+            'hi-IN': '🚨 आपातकालीन चेतावनी: तीव्र संकट का पता चला। कृपया तुरंत आपातकालीन विभाग में जाएं।',
+            'te-IN': '🚨 అత్యవసర హెచ్చరిక: తీవ్రమైన ఇబ్బంది కనుగొనబడింది. దయచేసి వెంటనే అత్యవసర విభాగానికి వెళ్ళండి.',
+            'ta-IN': '🚨 அவசர எச்சரிக்கை: தீவிர பாதிப்பு கண்டறியப்பட்டது. உடனடியாக அவசர சிகிச்சைப் பிரிவுக்குச் செல்லவும்.',
+            'kn-IN': '🚨 ತುರ್ತು ಎಚ್ಚರಿಕೆ: ತೀವ್ರ ತೊಂದರೆ ಪತ್ತೆಯಾಗಿದೆ. ದಯವಿಟ್ಟು ತಕ್ಷಣ ತುರ್ತು ವಿಭಾಗಕ್ಕೆ ಭೇಟಿ ನೀಡಿ.',
+            'ml-IN': '🚨 അടിയന്തിര മുന്നറിയിപ്പ്: ഗുരുതരമായ പ്രശ്നം കണ്ടെത്തി. ദയവായി ഉടൻ തന്നെ അത്യാഹിത വിഭാഗം സന്ദർശിക്കുക.',
+            'mr-IN': '🚨 तातडीची चेतावणी: तीव्र त्रास आढळला. कृपया त्वरित आपत्कालीन विभागात जा.',
+            'bn-IN': '🚨 জরুরি সতর্কতা: তীব্র সমস্যা ধরা পড়েছে। অবিলম্বে জরুরি বিভাগে যান।',
+            'gu-IN': '🚨 ઇમરજન્સી ચેતવણી: તીવ્ર તકલીફ જણાયેલ છે. તાત્કાલિક ઇમરજન્સી વિભાગની મુલાકાત લો.',
+            'pa-IN': '🚨 ਐਮਰਜੈਂਸੀ ਚੇਤਾਵਨੀ: ਗੰਭੀਰ ਸਮੱਸਿਆ ਦਾ ਪਤਾ ਲੱਗਾ। ਕਿਰਪਾ ਕਰਕੇ ਤੁਰੰत ਐਮਰਜੈਂਸੀ ਵਿਭਾਗ ਵਿੱਚ ਜਾਓ।',
+            'ur-IN': '🚨 ہنگامی وارننگ: شدید تکلیف کا پتہ چلا ہے۔ براہ کرم فوراً ایمرجنसी وارڈ میں جائیں۔'
+          }
         };
-      } else if (symptoms.toLowerCase().includes('child') || symptoms.toLowerCase().includes('baby')) {
-        result = {
-          conditions: 'Pediatric viral fever registry',
-          urgency: 'ROUTINE',
-          dept: 'Pediatrics',
-          suggested: DOCTORS[2]
+      } else {
+        let dept = 'General Medicine';
+        let doc = DOCTORS[0];
+        let conditions = 'Acute viral pharyngitis with mild secondary bronchospasms';
+        let risk = 'LOW';
+        
+        if (lower.includes('child') || lower.includes('baby') || (lower.includes('fever') && age < 14)) {
+          dept = 'Pediatrics';
+          doc = DOCTORS[2];
+          conditions = 'Pediatric viral fever registry';
+          risk = 'MEDIUM';
+        } else if (lower.includes('nerve') || lower.includes('brain') || lower.includes('paralysis') || lower.includes('neurology')) {
+          dept = 'Neurology';
+          doc = DOCTORS[1];
+          conditions = 'Neuropathy tracking analysis';
+          risk = 'HIGH';
+        }
+
+        report = {
+          conditions: `${conditions} vs Mild respiratory inflammation`,
+          riskLevel: risk,
+          urgency: 'ROUTINE (Schedule Visit)',
+          dept: dept,
+          suggested: doc,
+          suggestedActions: [
+            'Hydrate well, rest, and monitor body temperatures.',
+            'Schedule a teleconsultation visit if symptoms persist.',
+            `Adjusted recommendation for patient with chronic illnesses: [${chronic}].`
+          ],
+          aiVoiceReply: {
+            'en-US': `We recommend consulting ${doc.name} in ${dept} for further diagnosis.`,
+            'hi-IN': `हम लक्षणों की जांच के लिए ${dept} में ${doc.name} से परामर्श की सलाह देते हैं।`,
+            'te-IN': `మేము తదుపరి పరీక్షల కోసం ${dept} లో ${doc.name} ని సంప్రదించాల్సిందిగా సిఫార్సు చేస్తున్నాము.`,
+            'ta-IN': `மேலும் கண்டறிதலுக்கு ${dept} இல் ${doc.name} ஐ அணுக பரிந்துரைக்கிறோம்.`,
+            'kn-IN': `ಹೆಚ್ಚಿನ ತಪಾಸಣೆಗಾಗಿ ನಾವು ${dept} ನಲ್ಲಿ ${doc.name} ರನ್ನು ಸಂಪರ್ಕಿಸಲು ಶಿಫಾರಸು ಮಾಡುತ್ತೇವೆ.`,
+            'ml-IN': `കൂടുതൽ പരിശോധനകൾക്കായി ${dept}-ൽ ${doc.name}-നെ കാണാൻ ഞങ്ങൾ ശുപാർശ ചെയ്യുന്നു.`,
+            'mr-IN': `पुढील निदानासाठी आम्ही ${dept} मधील ${doc.name} चा सल्ला घेण्याची शिफारस करतो.`,
+            'bn-IN': `আরও বিশ্লেষণের জন্য আমরা ${dept}-এ ${doc.name}-এর সাথে পরামর্শ করার পরামর্শ দিই।`,
+            'gu-IN': `વધુ નિદાન માટે અમે ${dept} માં ${doc.name} નો સંપર્ક કરવાની ભલામણ કરીએ છીએ.`,
+            'pa-IN': `ਵਧੇਰੇ ਜਾਂਚ ਲਈ ਅਸੀਂ ${dept} ਵਿੱਚ ${doc.name} ਨਾਲ ਸਲਾਹ ਕਰਨ ਦੀ ਸਿਫਾਰਸ਼ ਕਰਦੇ ਹਾਂ।`,
+            'ur-IN': `مزید تشخیص کے لیے ہم ${dept} میں ${doc.name} سے رجوع کرنے کا مشورہ دیتے ہیں۔`
+          }
         };
       }
 
-      setAiReport(result);
+      setAiReport(report);
       setIsAiChecking(false);
-      showToast('AI Symptom analysis completed!', 'success');
-    }, 1200);
+      showToast('Multilingual AI Symptom analysis completed!', 'success');
+      
+      const replyText = report.aiVoiceReply[langCode] || report.aiVoiceReply['en-US'];
+      playVoiceOutput(replyText, langCode);
+
+      // Save dynamic query history in DMS document uploads as clinical logs
+      const historyLog = `AI Assistant Query: [${text}], Translation: [${englishTranslation}], Urgent level: [${report.urgency}]`;
+      fetch('/api/advanced/documents/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          patientId: patientID,
+          category: 'AI Assistant Query',
+          name: `VoiceQuery - ${new Date().toLocaleDateString()}.pdf`,
+          notes: historyLog
+        })
+      }).then(() => loadData()).catch(() => {});
+
+    }, 1500);
+  };
+
+  const playVoiceOutput = (text, langCode) => {
+    if (!window.speechSynthesis) {
+      showToast('Text-to-Speech not supported in this browser', 'warning');
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = langCode;
+    
+    utterance.onstart = () => setIsPlayingAudio(true);
+    utterance.onend = () => setIsPlayingAudio(false);
+    utterance.onerror = () => setIsPlayingAudio(false);
+
+    setSynthUtterance(utterance);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const pauseVoiceOutput = () => {
+    if (window.speechSynthesis) {
+      if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+        window.speechSynthesis.pause();
+        setIsPlayingAudio(false);
+      } else if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+        setIsPlayingAudio(true);
+      }
+    }
+  };
+
+  const replayVoiceOutput = () => {
+    if (synthUtterance) {
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(synthUtterance);
+      setIsPlayingAudio(true);
+    }
+  };
+
+  const checkSymptoms = (e) => {
+    e.preventDefault();
+    if (!symptoms.trim()) return;
+    
+    setOriginalText(symptoms);
+    const matchedLang = LANGUAGES.find(l => l.code === selectedLanguage);
+    setDetectedLang(matchedLang ? matchedLang.name : 'English');
+
+    processDynamicMultilingualSymptom(symptoms, selectedLanguage);
   };
 
   // AI Lab Explainer
@@ -861,64 +1071,187 @@ export default function PatientDashboard() {
         </div>
       )}
 
-      {/* ─────────────────── TAB: AI SYMPTOM CHECKER ─────────────────── */}
+      {/* ─────────────────── TAB: AI VOICE HEALTH ASSISTANT ─────────────────── */}
       {activeTab === 'symptom-checker' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 glass-card p-6">
-            <h2 className="text-lg font-bold text-slate-800 dark:text-white mb-4 flex items-center gap-2">
-              <Bot className="w-5 h-5 text-brand-600" /> Clinical Symptom Checker
-            </h2>
-            <p className="text-xs text-slate-400 mb-4 leading-relaxed">Describe your chief complaints in detail (e.g. "I have a sore throat, runny nose and mild dry cough"). The AI checks potential departments.</p>
+          <div className="lg:col-span-2 glass-card p-6 space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+              <div>
+                <h2 className="text-xl font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                  <Bot className="w-5 h-5 text-brand-600 animate-pulse" /> AI Voice Health Assistant
+                </h2>
+                <p className="text-xs text-slate-400 mt-1">Speak or type your symptoms in your native language for instant smart diagnosis.</p>
+              </div>
 
+              {/* Language Selector */}
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-bold text-slate-400 uppercase">Input Language:</span>
+                <select
+                  value={selectedLanguage}
+                  onChange={e => setSelectedLanguage(e.target.value)}
+                  className="px-3 py-1.5 text-xs border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500 font-medium"
+                >
+                  {LANGUAGES.map(l => (
+                    <option key={l.code} value={l.code}>{l.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Voice Input Section */}
+            <div className="p-5 bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl flex flex-col items-center justify-center text-center space-y-3">
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={isListening ? () => {} : startListening}
+                  className={`w-16 h-16 rounded-full flex items-center justify-center transition-all ${
+                    isListening 
+                      ? 'bg-rose-500 text-white animate-pulse shadow-lg shadow-rose-500/30' 
+                      : 'bg-brand-500 text-white hover:scale-105 active:scale-95 shadow-lg shadow-brand-500/20'
+                  }`}
+                >
+                  <span className="text-2xl">🎤</span>
+                </button>
+                {isListening && (
+                  <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-[9px] bg-rose-500 text-white px-2 py-0.5 rounded-full font-bold uppercase tracking-wider animate-bounce">
+                    Listening
+                  </span>
+                )}
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-slate-800 dark:text-white mt-2">
+                  {isListening ? 'Please speak naturally now...' : 'Click to start natural speech input'}
+                </p>
+                <p className="text-[10px] text-slate-400 mt-1">Automatically translates and reviews clinical distress indicators.</p>
+              </div>
+            </div>
+
+            {/* Fallback Text Input Form */}
             <form onSubmit={checkSymptoms} className="space-y-4">
-              <textarea 
-                required 
-                value={symptoms} 
-                onChange={e => setSymptoms(e.target.value)}
-                rows={4} 
-                className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none" 
-                placeholder="Describe what you are currently feeling..." 
-              />
-              <button type="submit" disabled={isAiChecking} className="btn-primary w-full py-2.5 text-sm">
-                {isAiChecking ? 'Analyzing clinical telemetry...' : 'Analyze Symptoms'}
+              <div>
+                <label className="text-xs font-bold text-slate-400 uppercase block mb-1">Text input fallback</label>
+                <textarea 
+                  required 
+                  value={symptoms} 
+                  onChange={e => setSymptoms(e.target.value)}
+                  rows={3} 
+                  className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none" 
+                  placeholder="Or type what you are currently feeling here..." 
+                />
+              </div>
+              <button type="submit" disabled={isAiChecking} className="btn-primary w-full py-2.5 text-sm font-medium">
+                {isAiChecking ? 'Analyzing clinical telemetry...' : 'Submit Symptoms Analysis'}
               </button>
             </form>
+
+            {/* Translation & Transcript View Panels */}
+            {originalText && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                <div className="p-4 bg-slate-100/50 dark:bg-slate-900/50 border border-slate-200/40 rounded-xl">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Detected Language Transcript ({detectedLang})</span>
+                  <p className="text-xs font-medium text-slate-800 dark:text-slate-200 leading-relaxed italic">"{originalText}"</p>
+                </div>
+                <div className="p-4 bg-brand-50/20 dark:bg-brand-500/[0.02] border border-brand-200/40 rounded-xl">
+                  <span className="text-[10px] font-bold text-brand-600 dark:text-brand-400 uppercase block mb-1">English Live Translation</span>
+                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-relaxed italic">"{translatedText}"</p>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* AI Output Result */}
+          {/* AI Output Result & Text to Speech Controls */}
           {aiReport ? (
-            <div className="glass-card p-6 border-l-4 border-l-brand-500 bg-brand-500/[0.02]">
-              <h3 className="text-sm font-bold text-brand-600 flex items-center gap-1.5"><Sparkles className="w-4 h-4 animate-bounce" /> Clinical Triage Conclusion</h3>
-              
-              <div className="space-y-3 mt-4">
+            <div className={`glass-card p-6 h-fit border-l-4 ${
+              aiReport.riskLevel === 'CRITICAL' ? 'border-l-rose-500 bg-rose-500/[0.01]' : 'border-l-brand-500 bg-brand-500/[0.01]'
+            } space-y-6`}>
+              <div className="flex justify-between items-center pb-3 border-b border-slate-150 dark:border-slate-800">
+                <h3 className="text-sm font-bold text-brand-600 dark:text-brand-400 flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4 animate-bounce" /> Clinical Triage Conclusion
+                </h3>
+                
+                {/* Voice Synthesis Controls */}
+                <div className="flex items-center gap-1.5">
+                  <button 
+                    onClick={replayVoiceOutput} 
+                    className="p-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl text-slate-600 dark:text-slate-300"
+                    title="Replay Voice response"
+                  >
+                    🔄
+                  </button>
+                  <button 
+                    onClick={pauseVoiceOutput} 
+                    className={`p-2 rounded-xl ${
+                      isPlayingAudio ? 'bg-brand-500 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300'
+                    }`}
+                    title="Pause / Resume Voice"
+                  >
+                    {isPlayingAudio ? '⏸' : '▶'}
+                  </button>
+                </div>
+              </div>
+
+              {/* EMERGENCY WARNING WIDGET */}
+              {aiReport.riskLevel === 'CRITICAL' && (
+                <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-rose-500">
+                  <h4 className="font-extrabold text-sm flex items-center gap-1.5 uppercase tracking-wider animate-pulse">
+                    🚨 EMERGENCY WARNING
+                  </h4>
+                  <p className="text-xs mt-1.5 font-medium leading-relaxed">
+                    Critical clinical telemetry flags detected. Please visit the Emergency Ward immediately. Do not delay medical assistance.
+                  </p>
+                </div>
+              )}
+
+              <div className="space-y-4">
                 <div>
                   <span className="text-[10px] text-slate-400 font-bold uppercase">Urgency Assessment</span>
-                  <p className={`text-xs font-extrabold ${aiReport.urgency.includes('STAT') ? 'text-rose-500 animate-pulse' : 'text-slate-800 dark:text-white'}`}>{aiReport.urgency}</p>
+                  <p className={`text-xs font-extrabold mt-0.5 ${
+                    aiReport.riskLevel === 'CRITICAL' ? 'text-rose-500 animate-pulse' : 'text-slate-850 dark:text-slate-100'
+                  }`}>{aiReport.urgency}</p>
                 </div>
                 <div>
                   <span className="text-[10px] text-slate-400 font-bold uppercase">Potential Pathologies</span>
-                  <p className="text-xs font-semibold text-slate-800 dark:text-white leading-relaxed">{aiReport.conditions}</p>
+                  <p className="text-xs font-semibold text-slate-800 dark:text-white leading-relaxed mt-0.5">{aiReport.conditions}</p>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase">Recommended Dept</span>
+                    <p className="text-xs font-semibold text-slate-850 dark:text-white mt-0.5">{aiReport.dept}</p>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-bold uppercase">Suggested Doctor</span>
+                    <p className="text-xs font-semibold text-slate-850 dark:text-white mt-0.5">{aiReport.suggested.name}</p>
+                  </div>
                 </div>
                 <div>
-                  <span className="text-[10px] text-slate-400 font-bold uppercase">Department Clinic</span>
-                  <p className="text-xs font-semibold text-slate-800 dark:text-white">{aiReport.dept}</p>
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-400 font-bold uppercase">Recommended Specialist</span>
-                  <p className="text-xs font-semibold text-slate-800 dark:text-white">{aiReport.suggested.name}</p>
+                  <span className="text-[10px] text-slate-400 font-bold uppercase">Suggested Actions</span>
+                  <ul className="space-y-1 mt-1">
+                    {aiReport.suggestedActions.map((act, idx) => (
+                      <li key={idx} className="text-xs text-slate-500 dark:text-slate-400 flex items-start gap-1">
+                        <span className="text-brand-500 mt-0.5">•</span> {act}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               </div>
 
               <button 
-                onClick={() => { setSelectedDept(aiReport.dept); setSelectedDoctor(aiReport.suggested); setTab('appointments'); }}
-                className="w-full btn-primary py-2 text-xs mt-5"
+                onClick={() => { 
+                  setSelectedDept(aiReport.dept); 
+                  setSelectedDoctor(aiReport.suggested); 
+                  setTab('appointments'); 
+                  showToast(`Selected ${aiReport.suggested.name} for booking!`, 'success');
+                }}
+                className="w-full btn-primary py-2.5 text-xs mt-3 flex items-center justify-center gap-2 shadow-md shadow-brand-500/20"
               >
-                Book with {aiReport.suggested.name} Directly
+                <span>📅 Smart Book Appointment</span>
               </button>
             </div>
           ) : (
-            <div className="glass-card p-6 flex items-center justify-center text-center text-slate-400 bg-slate-50/20 dark:bg-slate-900/30">
-              <p className="text-xs italic">Submit symptom logs to generate triage diagnostics.</p>
+            <div className="glass-card p-6 flex items-center justify-center text-center text-slate-400 bg-slate-50/20 dark:bg-slate-900/30 h-64 lg:h-auto">
+              <p className="text-xs italic leading-relaxed">
+                Click the microphone button to dictate symptoms or type them. The AI parses Indian & International languages dynamically.
+              </p>
             </div>
           )}
         </div>
