@@ -1,6 +1,7 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
+import { db } from '../db/mockData.js';
 
 const router = express.Router();
 
@@ -138,8 +139,8 @@ router.post('/register', async (req, res) => {
     password,
     address,
     emergencyContact,
-    insuranceProvider,
-    insuranceNumber
+    knownAllergies,
+    existingConditions
   } = req.body;
 
   try {
@@ -149,6 +150,9 @@ router.post('/register', async (req, res) => {
     const nameParts = fullName.split(' ');
     const firstName = nameParts[0] || '';
     const lastName = nameParts.slice(1).join(' ') || '';
+
+    const allergiesList = knownAllergies ? knownAllergies.split(',').map(s => s.trim()).filter(Boolean) : [];
+    const chronicDiseasesList = existingConditions ? existingConditions.split(',').map(s => s.trim()).filter(Boolean) : [];
 
     const newPatient = {
       id: patientId,
@@ -161,10 +165,8 @@ router.post('/register', async (req, res) => {
       phone: mobile || '',
       address: address || '',
       emergencyCont: emergencyContact || '',
-      insuranceProvider: insuranceProvider || '',
-      insuranceNumber: insuranceNumber || '',
-      allergies: [],
-      chronicDiseases: []
+      allergies: allergiesList,
+      chronicDiseases: chronicDiseasesList
     };
 
     db.patients.push(newPatient);

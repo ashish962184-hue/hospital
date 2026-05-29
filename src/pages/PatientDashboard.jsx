@@ -489,10 +489,10 @@ export default function PatientDashboard() {
     }, 1000);
   };
 
-  const patientName = user?.name || 'Emma Watson';
+  const patientName = patientProfile ? `${patientProfile.firstName} ${patientProfile.lastName}` : (user?.name || 'Patient');
   const patientEmail = user?.email || 'patient@nova.com';
-  const patientMRN = 'MRN-1001';
-  const patientID = user?.patientId || 'p1';
+  const patientMRN = patientProfile?.mrn || 'MRN-TEMP';
+  const patientID = user?.patientId || patientProfile?.id || 'p-temp';
 
   // Navigation redirect helpers
   const setTab = (tab) => {

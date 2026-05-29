@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Stethoscope, Lock, Mail, ArrowRight, Loader2, ChevronDown, User, Calendar, Phone, Home, ShieldAlert } from 'lucide-react';
+import { Stethoscope, Lock, Mail, ArrowRight, Loader2, ChevronDown, User, Calendar, Phone, Home, ShieldAlert, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useStore } from '../store';
 
 const HOME_ROUTES = {
@@ -25,6 +25,95 @@ export default function Login() {
   // Demographics Registration Fields
   const [fullName, setFullName] = useState('');
   const [dob, setDob] = useState('1995-01-01');
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [viewDate, setViewDate] = useState(new Date(1995, 0, 1)); // January 1995
+  const [dobError, setDobError] = useState('');
+
+  const monthsList = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  const currentYear = new Date().getFullYear();
+  const yearsList = Array.from({ length: currentYear - 1900 + 1 }, (_, i) => currentYear - i);
+
+  const getDaysInMonth = (y, m) => new Date(y, m + 1, 0).getDate();
+  const getFirstDayOfMonth = (y, m) => new Date(y, m, 1).getDay();
+
+  const handlePrevMonth = () => {
+    setViewDate(prev => {
+      const prevMonth = prev.getMonth() === 0 ? 11 : prev.getMonth() - 1;
+      const prevYear = prev.getMonth() === 0 ? prev.getFullYear() - 1 : prev.getFullYear();
+      return new Date(prevYear, prevMonth, 1);
+    });
+  };
+
+  const handleNextMonth = () => {
+    setViewDate(prev => {
+      const nextMonth = prev.getMonth() === 11 ? 0 : prev.getMonth() + 1;
+      const nextYear = prev.getMonth() === 11 ? prev.getFullYear() + 1 : prev.getFullYear();
+      return new Date(nextYear, nextMonth, 1);
+    });
+  };
+
+  const handleYearChange = (year) => {
+    setViewDate(prev => new Date(parseInt(year), prev.getMonth(), 1));
+  };
+
+  const handleMonthChange = (monthIdx) => {
+    setViewDate(prev => new Date(prev.getFullYear(), parseInt(monthIdx), 1));
+  };
+
+  const calculateAge = (dateStr) => {
+    if (!dateStr) return null;
+    const birthDate = new Date(dateStr);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  const handleSelectDate = (day) => {
+    const selectedDate = new Date(viewDate.getFullYear(), viewDate.getMonth(), day);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (selectedDate > today) {
+      setDobError("Date of birth cannot be in the future");
+    } else {
+      setDobError("");
+      const offset = selectedDate.getTimezoneOffset();
+      const localDate = new Date(selectedDate.getTime() - (offset * 60 * 1000));
+      const formatted = localDate.toISOString().split('T')[0];
+      setDob(formatted);
+      setIsCalendarOpen(false);
+    }
+  };
+
+  const applyPreset = (preset) => {
+    const today = new Date();
+    let targetDate = new Date();
+    if (preset === 'today') {
+      targetDate = today;
+    } else if (preset === 'last_month') {
+      targetDate.setMonth(today.getMonth() - 1);
+    } else if (preset === 'last_year') {
+      targetDate.setFullYear(today.getFullYear() - 1);
+    }
+
+    const offset = targetDate.getTimezoneOffset();
+    const localDate = new Date(targetDate.getTime() - (offset * 60 * 1000));
+    const formatted = localDate.toISOString().split('T')[0];
+
+    setDob(formatted);
+    setViewDate(targetDate);
+    setDobError('');
+    setIsCalendarOpen(false);
+  };
+
   const [gender, setGender] = useState('Male');
   const [bloodGroup, setBloodGroup] = useState('O+');
   const [mobile, setMobile] = useState('');
@@ -32,8 +121,8 @@ export default function Login() {
   const [regPassword, setRegPassword] = useState('');
   const [address, setAddress] = useState('');
   const [emergencyContact, setEmergencyContact] = useState('');
-  const [insuranceProvider, setInsuranceProvider] = useState('');
-  const [insuranceNumber, setInsuranceNumber] = useState('');
+  const [knownAllergies, setKnownAllergies] = useState('');
+  const [existingConditions, setExistingConditions] = useState('');
 
   const navigate = useNavigate();
   const login    = useStore(state => state.login);
@@ -93,8 +182,8 @@ export default function Login() {
           password: regPassword,
           address,
           emergencyContact,
-          insuranceProvider,
-          insuranceNumber
+          knownAllergies,
+          existingConditions
         }),
       });
 
@@ -113,6 +202,12 @@ export default function Login() {
       setIsLoading(false);
     }
   };
+
+  const daysInMonth = getDaysInMonth(viewDate.getFullYear(), viewDate.getMonth());
+  const firstDayIndex = getFirstDayOfMonth(viewDate.getFullYear(), viewDate.getMonth());
+  const blankDays = Array(firstDayIndex).fill(null);
+  const monthDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
+  const calendarCells = [...blankDays, ...monthDays];
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 relative overflow-hidden py-12 px-4">
@@ -148,9 +243,113 @@ export default function Login() {
                   <label className="block text-xs font-semibold text-slate-500 mb-1">Full Name</label>
                   <input required type="text" value={fullName} onChange={e => setFullName(e.target.value)} className="block w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 text-sm text-slate-900 dark:text-white" placeholder="Emma Watson" />
                 </div>
-                <div>
+                <div className="col-span-2 relative">
                   <label className="block text-xs font-semibold text-slate-500 mb-1">Date of Birth</label>
-                  <input required type="date" value={dob} onChange={e => setDob(e.target.value)} className="block w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 text-sm text-slate-900 dark:text-white" />
+                  <button
+                    type="button"
+                    onClick={() => setIsCalendarOpen(!isCalendarOpen)}
+                    className="flex items-center justify-between w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 text-sm text-slate-900 dark:text-white hover:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500 transition-all text-left cursor-pointer"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-brand-500" />
+                      {dob ? new Date(dob).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'Select Date of Birth'}
+                    </span>
+                    <span className="text-xs bg-brand-50 dark:bg-brand-900/30 text-brand-600 dark:text-brand-400 px-2 py-0.5 rounded-md font-bold">
+                      {dob ? `${calculateAge(dob)} Years` : 'Age'}
+                    </span>
+                  </button>
+
+                  {dobError && (
+                    <p className="text-[11px] text-red-500 font-semibold mt-1 flex items-center gap-1">
+                      <ShieldAlert className="w-3.5 h-3.5 text-red-500" />
+                      {dobError}
+                    </p>
+                  )}
+
+                  {/* Custom Popover Calendar */}
+                  {isCalendarOpen && (
+                    <div className="absolute top-[100%] left-0 right-0 z-50 mt-2 p-4 glass-card rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 max-w-sm mx-auto">
+                      {/* Presets */}
+                      <div className="flex gap-1.5 mb-3 justify-center">
+                        <button type="button" onClick={() => applyPreset('today')} className="text-[10px] font-bold px-2.5 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-lg text-slate-700 dark:text-slate-300 transition-all cursor-pointer">Today</button>
+                        <button type="button" onClick={() => applyPreset('last_month')} className="text-[10px] font-bold px-2.5 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-lg text-slate-700 dark:text-slate-300 transition-all cursor-pointer">Last Month</button>
+                        <button type="button" onClick={() => applyPreset('last_year')} className="text-[10px] font-bold px-2.5 py-1 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-lg text-slate-700 dark:text-slate-300 transition-all cursor-pointer">Last Year</button>
+                        <button type="button" onClick={() => { setViewDate(new Date(1995, 0, 1)); setDob('1995-01-01'); setDobError(''); }} className="text-[10px] font-bold px-2.5 py-1 bg-brand-50 hover:bg-brand-100 dark:bg-brand-950/50 dark:hover:bg-brand-900/50 rounded-lg text-brand-600 dark:text-brand-400 transition-all cursor-pointer">Preset '95</button>
+                      </div>
+
+                      {/* Header controls */}
+                      <div className="flex items-center justify-between mb-3 gap-1">
+                        <button type="button" onClick={handlePrevMonth} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-400 transition-all cursor-pointer">
+                          <ChevronLeft className="w-4 h-4" />
+                        </button>
+                        
+                        <div className="flex gap-1.5">
+                          <select
+                            value={viewDate.getMonth()}
+                            onChange={e => handleMonthChange(e.target.value)}
+                            className="text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-1 text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer"
+                          >
+                            {monthsList.map((m, idx) => (
+                              <option key={idx} value={idx}>{m}</option>
+                            ))}
+                          </select>
+
+                          <select
+                            value={viewDate.getFullYear()}
+                            onChange={e => handleYearChange(e.target.value)}
+                            className="text-xs font-bold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg p-1 text-slate-800 dark:text-slate-200 focus:outline-none cursor-pointer max-h-36"
+                          >
+                            {yearsList.map(y => (
+                              <option key={y} value={y}>{y}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <button type="button" onClick={handleNextMonth} className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-600 dark:text-slate-400 transition-all cursor-pointer">
+                          <ChevronRight className="w-4 h-4" />
+                        </button>
+                      </div>
+
+                      {/* Days Grid */}
+                      <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-bold text-slate-400 mb-1">
+                        <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
+                      </div>
+
+                      <div className="grid grid-cols-7 gap-1">
+                        {calendarCells.map((day, idx) => {
+                          if (day === null) {
+                            return <div key={`empty-${idx}`} />;
+                          }
+                          const isSelected = dob && new Date(dob).getDate() === day && new Date(dob).getMonth() === viewDate.getMonth() && new Date(dob).getFullYear() === viewDate.getFullYear();
+                          const isToday = new Date().getDate() === day && new Date().getMonth() === viewDate.getMonth() && new Date().getFullYear() === viewDate.getFullYear();
+                          return (
+                            <button
+                              key={`day-${day}`}
+                              type="button"
+                              onClick={() => handleSelectDate(day)}
+                              className={`aspect-square text-xs font-bold rounded-lg transition-all flex items-center justify-center cursor-pointer ${
+                                isSelected
+                                  ? 'bg-brand-500 text-white shadow-md shadow-brand-500/20'
+                                  : isToday
+                                  ? 'border border-brand-500 text-brand-500 bg-brand-50/20'
+                                  : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200'
+                              }`}
+                            >
+                              {day}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Age Preview */}
+                      <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800 flex justify-between items-center text-[11px]">
+                        <span className="text-slate-400 font-medium">Selected DOB:</span>
+                        <span className="font-bold text-slate-700 dark:text-slate-300">
+                          {dob ? new Date(dob).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : 'None'}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 mb-1">Gender</label>
@@ -193,13 +392,13 @@ export default function Login() {
                   <label className="block text-xs font-semibold text-slate-500 mb-1">Emergency Contact</label>
                   <input required type="text" value={emergencyContact} onChange={e => setEmergencyContact(e.target.value)} className="block w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 text-sm text-slate-900 dark:text-white" placeholder="+1 555-0102" />
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Insurance Provider</label>
-                  <input type="text" value={insuranceProvider} onChange={e => setInsuranceProvider(e.target.value)} className="block w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 text-sm text-slate-900 dark:text-white" placeholder="BlueCross Health" />
+                <div className="col-span-2">
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Known Allergies (Optional)</label>
+                  <input type="text" value={knownAllergies} onChange={e => setKnownAllergies(e.target.value)} className="block w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 text-sm text-slate-900 dark:text-white" placeholder="e.g. Penicillin, Peanuts (leave empty if none)" />
                 </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 mb-1">Insurance Policy Number</label>
-                  <input type="text" value={insuranceNumber} onChange={e => setInsuranceNumber(e.target.value)} className="block w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 text-sm text-slate-900 dark:text-white" placeholder="POL-12345" />
+                <div className="col-span-2">
+                  <label className="block text-xs font-semibold text-slate-500 mb-1">Existing Conditions (Optional)</label>
+                  <input type="text" value={existingConditions} onChange={e => setExistingConditions(e.target.value)} className="block w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-xl bg-white/50 dark:bg-slate-800/50 text-sm text-slate-900 dark:text-white" placeholder="e.g. Hypertension, Asthma (leave empty if none)" />
                 </div>
               </div>
 

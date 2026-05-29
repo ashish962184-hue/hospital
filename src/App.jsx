@@ -41,6 +41,7 @@ import NursingDashboard from './pages/NursingDashboard';
 import DirectorDashboard from './pages/DirectorDashboard';
 import RadiologyDashboard from './pages/RadiologyDashboard';
 import CommandCenter from './pages/CommandCenter';
+import Settings from './pages/Settings';
 
 function App() {
   const initAuth = useStore(state => state.initAuth);
@@ -63,9 +64,7 @@ function App() {
           <Route path="/appointments"   element={<Appointments />} />
           <Route path="/admin/patients" element={<Patients />} />
           <Route path="/nurse"          element={<NurseDashboard />} />
-          <Route path="/ipd"            element={<NursingDashboard />} />
           <Route path="/lab"            element={<LabDashboard />} />
-          <Route path="/reports"        element={<LabReports />} />
           <Route path="/pharmacist"     element={<PharmacistDashboard />} />
           <Route path="/pharmacy"       element={<Pharmacy />} />
           <Route path="/billing-desk"   element={<BillingDashboard />} />
@@ -73,6 +72,12 @@ function App() {
           <Route path="/director"       element={<DirectorDashboard />} />
           <Route path="/command-center" element={<CommandCenter />} />
           <Route path="/radiology"      element={<RadiologyDashboard />} />
+        </Route>
+
+        {/* Shared Doctor and Admin clinical areas */}
+        <Route element={<EnterpriseLayout allowedRoles={['ADMIN', 'DOCTOR']} />}>
+          <Route path="/ipd"            element={<NursingDashboard />} />
+          <Route path="/reports"        element={<LabReports />} />
         </Route>
 
         {/* ── DOCTOR Workspace ─────────────────────────────────────────── */}
@@ -103,7 +108,7 @@ function App() {
         {/* ── Shared / All Authenticated ───────────────────────────────── */}
         <Route element={<EnterpriseLayout />}>
           <Route path="/ai-assistant" element={<AIAssistant />} />
-          <Route path="/settings"     element={<div className="p-8 text-slate-800 dark:text-white">Settings Page coming soon...</div>} />
+          <Route path="/settings"     element={<Settings />} />
           <Route path="/unauthorized" element={
             <div className="p-8 text-center text-rose-500 font-bold text-xl">
               403 - Access Denied

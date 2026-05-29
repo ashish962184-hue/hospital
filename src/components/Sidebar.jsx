@@ -119,6 +119,7 @@ export default function Sidebar({ userRole }) {
                 <NavLink
                   key={item.name}
                   to={item.path}
+                  end
                   onClick={() => {
                     if (window.innerWidth < 768) {
                       closeMobileMenu();

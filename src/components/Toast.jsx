@@ -8,7 +8,7 @@ export default function Toast() {
   if (!toast) return null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 animate-slide-up">
+    <div className="fixed top-20 right-6 z-[9999] animate-slide-in-right pointer-events-auto max-w-xs md:max-w-sm">
       <div className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl border backdrop-blur-md ${
         toast.type === 'success' ? 'bg-emerald-50/90 dark:bg-emerald-900/40 border-emerald-200 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-200' :
         toast.type === 'info' ? 'bg-blue-50/90 dark:bg-blue-900/40 border-blue-200 dark:border-blue-500/30 text-blue-800 dark:text-blue-200' :
