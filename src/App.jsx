@@ -38,6 +38,9 @@ import LabReports from './pages/LabReports';
 import Pharmacy from './pages/Pharmacy';
 import AIAssistant from './pages/AIAssistant';
 import NursingDashboard from './pages/NursingDashboard';
+import DirectorDashboard from './pages/DirectorDashboard';
+import RadiologyDashboard from './pages/RadiologyDashboard';
+import CommandCenter from './pages/CommandCenter';
 
 function App() {
   const initAuth = useStore(state => state.initAuth);
@@ -102,6 +105,17 @@ function App() {
           <Route path="/patient"              element={<PatientDashboard />} />
           <Route path="/patient/appointments" element={<Appointments />} />
           <Route path="/patient/results"      element={<LabReports />} />
+        </Route>
+
+        {/* ── Hospital Director ────────────────────────────────────────── */}
+        <Route element={<EnterpriseLayout allowedRoles={['HOSPITAL_DIRECTOR']} />}>
+          <Route path="/director"        element={<DirectorDashboard />} />
+          <Route path="/command-center"  element={<CommandCenter />} />
+        </Route>
+
+        {/* ── Radiologist ─────────────────────────────────────────────── */}
+        <Route element={<EnterpriseLayout allowedRoles={['RADIOLOGIST']} />}>
+          <Route path="/radiology" element={<RadiologyDashboard />} />
         </Route>
 
         {/* ── Shared / All Authenticated ───────────────────────────────── */}

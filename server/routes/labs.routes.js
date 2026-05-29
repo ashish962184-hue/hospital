@@ -21,4 +21,14 @@ router.post('/', (req, res) => {
   res.status(201).json(newLab);
 });
 
+router.patch('/:id/complete', (req, res) => {
+  const { id } = req.params;
+  const { results, status } = req.body;
+  const lab = db.labRequests.find(l => l.id === id);
+  if (!lab) return res.status(404).json({ message: 'Lab request not found' });
+  lab.results = results;
+  lab.status = status || 'COMPLETED';
+  res.json({ message: 'Lab request completed successfully', lab });
+});
+
 export default router;

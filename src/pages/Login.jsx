@@ -13,6 +13,8 @@ const HOME_ROUTES = {
   PHARMACIST:    '/pharmacist',
   BILLING_CLERK: '/billing-desk',
   PATIENT:       '/patient',
+  HOSPITAL_DIRECTOR: '/director',
+  RADIOLOGIST:   '/radiology',
 };
 
 // All demo accounts — click any to prefill
@@ -25,6 +27,8 @@ const DEMO_ACCOUNTS = [
   { label: 'Pharmacist',   email: 'pharmacist@nova.com',  password: 'pharmacist',  role: 'PHARMACIST',    color: 'bg-teal-500'    },
   { label: 'Billing',      email: 'billing@nova.com',     password: 'billing',     role: 'BILLING_CLERK', color: 'bg-orange-500'  },
   { label: 'Patient',      email: 'patient@nova.com',     password: 'patient',     role: 'PATIENT',       color: 'bg-emerald-500' },
+  { label: 'Director',     email: 'director@nova.com',    password: 'director',    role: 'HOSPITAL_DIRECTOR', color: 'bg-indigo-500' },
+  { label: 'Radiology',    email: 'radiology@nova.com',   password: 'radiology',   role: 'RADIOLOGIST',   color: 'bg-cyan-500' },
 ];
 
 export default function Login() {

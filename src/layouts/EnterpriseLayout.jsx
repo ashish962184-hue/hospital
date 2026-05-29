@@ -28,6 +28,8 @@ export default function EnterpriseLayout({ allowedRoles }) {
       PHARMACIST: '/pharmacist',
       BILLING_CLERK: '/billing-desk',
       PATIENT: '/patient',
+      HOSPITAL_DIRECTOR: '/director',
+      RADIOLOGIST: '/radiology',
     };
     const home = homeRoutes[user.role] || '/unauthorized';
     return <Navigate to={home} replace />;

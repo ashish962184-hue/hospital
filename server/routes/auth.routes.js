@@ -82,6 +82,24 @@ router.post('/login', async (req, res) => {
       return res.json({ token, user: { role: 'PHARMACIST', name: 'Pharma Staff', email } });
     }
 
+    if (email === 'director@nova.com' && password === 'director') {
+      const token = jwt.sign(
+        { id: 'mock-director', role: 'HOSPITAL_DIRECTOR', name: 'Hospital Director' },
+        process.env.JWT_SECRET || 'enterprise_super_secret_key_12345',
+        { expiresIn: '8h' }
+      );
+      return res.json({ token, user: { role: 'HOSPITAL_DIRECTOR', name: 'Hospital Director', email } });
+    }
+
+    if (email === 'radiology@nova.com' && password === 'radiology') {
+      const token = jwt.sign(
+        { id: 'mock-radiology', role: 'RADIOLOGIST', name: 'Dr. John (Radiologist)' },
+        process.env.JWT_SECRET || 'enterprise_super_secret_key_12345',
+        { expiresIn: '8h' }
+      );
+      return res.json({ token, user: { role: 'RADIOLOGIST', name: 'Dr. John (Radiologist)', email } });
+    }
+
     // 2. Production Database Verification (Will run if demo accounts aren't used)
     const user = await prisma.user.findUnique({
       where: { email }
@@ -97,8 +115,13 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
+    // Map database roles to frontend equivalents
+    let userRole = user.role;
+    if (userRole === 'LAB_TECHNICIAN') userRole = 'LAB_TECH';
+    if (userRole === 'BILLING_STAFF') userRole = 'BILLING_CLERK';
+
     const token = jwt.sign(
-      { id: user.id, role: user.role, name: `${user.firstName} ${user.lastName}` },
+      { id: user.id, role: userRole, name: `${user.firstName} ${user.lastName}` },
       process.env.JWT_SECRET || 'enterprise_super_secret_key_12345',
       { expiresIn: '8h' }
     );
@@ -109,7 +132,7 @@ router.post('/login', async (req, res) => {
         id: user.id,
         email: user.email,
         name: `${user.firstName} ${user.lastName}`,
-        role: user.role
+        role: userRole
       }
     });
 

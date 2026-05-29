@@ -83,6 +83,20 @@ const getNavItems = (role) => {
         ...common,
       ];
 
+    case 'HOSPITAL_DIRECTOR':
+      return [
+        { name: 'Executive Portal',   path: '/director',       icon: LayoutDashboard },
+        { name: 'Command Center',     path: '/command-center', icon: Activity },
+        ...common,
+      ];
+
+    case 'RADIOLOGIST':
+      return [
+        { name: 'Radiology Board',    path: '/radiology',      icon: LayoutDashboard },
+        { name: 'Imaging Reports',    path: '/reports',        icon: FileText },
+        ...common,
+      ];
+
     default:
       return [];
   }

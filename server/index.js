@@ -8,6 +8,7 @@ import appointmentRoutes from './routes/appointments.routes.js';
 import labRoutes from './routes/labs.routes.js';
 import pharmacyRoutes from './routes/pharmacy.routes.js';
 import billingRoutes from './routes/billing.routes.js';
+import advancedRoutes from './routes/advanced.routes.js';
 import { verifyToken } from './middleware/auth.js';
 
 dotenv.config();
@@ -32,6 +33,7 @@ app.use('/api/appointments', verifyToken, appointmentRoutes);
 app.use('/api/labs', verifyToken, labRoutes);
 app.use('/api/pharmacy', verifyToken, pharmacyRoutes);
 app.use('/api/billing', verifyToken, billingRoutes);
+app.use('/api/advanced', verifyToken, advancedRoutes);
 
 // Global Error Handler
 app.use((err, req, res, next) => {

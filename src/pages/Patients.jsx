@@ -1,37 +1,81 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Plus, MoreVertical, Filter, Phone, Mail, User, X } from 'lucide-react';
 import { useStore } from '../store';
 
-const initialPatients = [
-  { id: 'PT-1001', name: 'Emma Watson', age: 34, gender: 'Female', blood: 'O+', phone: '+1 234-567-8900', lastVisit: '2023-10-15', status: 'Active' },
-  { id: 'PT-1002', name: 'Michael Chen', age: 45, gender: 'Male', blood: 'A-', phone: '+1 234-567-8901', lastVisit: '2023-10-12', status: 'Active' },
-  { id: 'PT-1003', name: 'Sarah Davis', age: 28, gender: 'Female', blood: 'B+', phone: '+1 234-567-8902', lastVisit: '2023-09-28', status: 'Inactive' },
-  { id: 'PT-1004', name: 'James Wilson', age: 62, gender: 'Male', blood: 'O-', phone: '+1 234-567-8903', lastVisit: '2023-10-18', status: 'Active' },
-  { id: 'PT-1005', name: 'Sophia Martinez', age: 19, gender: 'Female', blood: 'AB+', phone: '+1 234-567-8904', lastVisit: '2023-08-05', status: 'Active' },
-];
-
 export default function Patients() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [patients, setPatients] = useState(initialPatients);
+  const [patients, setPatients] = useState([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const showToast = useStore(state => state.showToast);
+  const [isLoading, setIsLoading] = useState(true);
+  const { showToast, token } = useStore();
+
+  useEffect(() => {
+    fetch('/api/patients', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+    .then(res => res.json())
+    .then(data => {
+      const mapped = data.map(p => ({
+        id: p.id,
+        name: `${p.firstName} ${p.lastName}`,
+        age: p.dob ? (new Date().getFullYear() - new Date(p.dob).getFullYear()) : (p.age || 34),
+        gender: p.gender,
+        blood: p.bloodGroup || 'O+',
+        phone: p.phone,
+        lastVisit: p.lastVisit || new Date().toISOString().split('T')[0],
+        status: p.status || 'Active'
+      }));
+      setPatients(mapped);
+      setIsLoading(false);
+    })
+    .catch(() => {
+      showToast('Failed to load patient records', 'error');
+      setIsLoading(false);
+    });
+  }, [token]);
 
   const handleAddPatient = (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-    const newPatient = {
-      id: `PT-${1000 + patients.length + 1}`,
-      name: formData.get('name'),
-      age: formData.get('age'),
+    const fullName = formData.get('name');
+    const [firstName, ...rest] = fullName.split(' ');
+    const lastName = rest.join(' ') || 'Patient';
+    
+    const body = {
+      firstName,
+      lastName,
+      dob: new Date(new Date().getFullYear() - parseInt(formData.get('age')), 0, 1).toISOString(),
       gender: formData.get('gender'),
-      blood: formData.get('blood'),
+      bloodGroup: formData.get('blood'),
       phone: formData.get('phone'),
-      lastVisit: new Date().toISOString().split('T')[0],
-      status: 'Active'
+      address: '123 Health District, NY',
     };
-    setPatients([newPatient, ...patients]);
-    setIsModalOpen(false);
-    showToast(`${newPatient.name} registered successfully!`);
+
+    fetch('/api/patients', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(body)
+    })
+    .then(res => res.json())
+    .then(p => {
+      const added = {
+        id: p.id,
+        name: `${p.firstName} ${p.lastName}`,
+        age: formData.get('age'),
+        gender: p.gender,
+        blood: p.bloodGroup,
+        phone: p.phone,
+        lastVisit: new Date().toISOString().split('T')[0],
+        status: 'Active'
+      };
+      setPatients([added, ...patients]);
+      setIsModalOpen(false);
+      showToast(`${added.name} registered successfully!`);
+    })
+    .catch(() => showToast('Failed to register patient', 'error'));
   };
 
   return (

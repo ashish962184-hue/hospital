@@ -1,34 +1,49 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Pill, AlertTriangle, ShoppingCart, ClipboardList, Search, CheckCircle, Clock, Package } from 'lucide-react';
 import StatCard from '../components/StatCard';
 import { useStore } from '../store';
 
-const PRESCRIPTIONS = [
-  { id: 'RX-001', patient: 'John Doe', doctor: 'Dr. Sarah Jenkins', medicines: ['Amoxicillin 500mg x10', 'Ibuprofen 400mg x6'], status: 'PENDING', time: '09:15 AM' },
-  { id: 'RX-002', patient: 'Emma Watson', doctor: 'Dr. Michael Chen', medicines: ['Metformin 500mg x30', 'Atorvastatin 10mg x30'], status: 'DISPENSED', time: '09:45 AM' },
-  { id: 'RX-003', patient: 'Aisha Patel', doctor: 'Dr. Ravi Mehta', medicines: ['Cetirizine 10mg x14'], status: 'PENDING', time: '10:30 AM' },
-];
-
-const INVENTORY = [
-  { name: 'Amoxicillin 500mg', stock: 45, unit: 'Strips', threshold: 50, expiry: '2026-12-01' },
-  { name: 'Ibuprofen 400mg', stock: 210, unit: 'Tablets', threshold: 100, expiry: '2027-03-15' },
-  { name: 'Metformin 500mg', stock: 88, unit: 'Tablets', threshold: 100, expiry: '2026-08-20' },
-  { name: 'Atorvastatin 10mg', stock: 150, unit: 'Tablets', threshold: 50, expiry: '2027-06-01' },
-  { name: 'Cetirizine 10mg', stock: 30, unit: 'Tablets', threshold: 50, expiry: '2026-10-01' },
-];
-
 export default function PharmacistDashboard() {
-  const { showToast } = useStore();
+  const { showToast, token } = useStore();
   const [search, setSearch] = useState('');
-  const [prescriptions, setPrescriptions] = useState(PRESCRIPTIONS);
+  const [prescriptions, setPrescriptions] = useState([]);
+  const [inventory, setInventory] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const dispense = (id) => {
-    setPrescriptions(prev => prev.map(rx => rx.id === id ? { ...rx, status: 'DISPENSED' } : rx));
-    showToast('Prescription dispensed successfully!', 'success');
+  const loadData = () => {
+    fetch('/api/pharmacy/prescriptions', { headers: { Authorization: `Bearer ${token}` } })
+      .then(res => res.json())
+      .then(data => setPrescriptions(data))
+      .catch(() => {});
+
+    fetch('/api/pharmacy/inventory', { headers: { Authorization: `Bearer ${token}` } })
+      .then(res => res.json())
+      .then(data => {
+        setInventory(data);
+        setIsLoading(false);
+      })
+      .catch(() => {});
   };
 
-  const filteredInventory = INVENTORY.filter(m => m.name.toLowerCase().includes(search.toLowerCase()));
-  const lowStock = INVENTORY.filter(m => m.stock < m.threshold).length;
+  useEffect(() => {
+    loadData();
+  }, [token]);
+
+  const dispense = (id) => {
+    fetch(`/api/pharmacy/dispense/${id}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => res.json())
+      .then(() => {
+        showToast('Prescription dispensed successfully and inventory decremented!', 'success');
+        loadData();
+      })
+      .catch(() => showToast('Failed to dispense prescription', 'error'));
+  };
+
+  const filteredInventory = inventory.filter(m => m.name.toLowerCase().includes(search.toLowerCase()));
+  const lowStock = inventory.filter(m => m.stock < 100).length;
   const pending = prescriptions.filter(rx => rx.status === 'PENDING').length;
 
   return (
@@ -43,7 +58,7 @@ export default function PharmacistDashboard() {
         <StatCard title="Pending Prescriptions" value={String(pending)} icon={ClipboardList} color="text-amber-500" bg="bg-amber-500/10" accentColor="border-l-amber-500" />
         <StatCard title="Dispensed Today" value="18" change="+4" icon={CheckCircle} color="text-emerald-500" bg="bg-emerald-500/10" accentColor="border-l-emerald-500" />
         <StatCard title="Low Stock Alerts" value={String(lowStock)} icon={AlertTriangle} color="text-rose-500" bg="bg-rose-500/10" accentColor="border-l-rose-500" />
-        <StatCard title="Total SKUs" value={String(INVENTORY.length)} icon={Package} color="text-brand-500" bg="bg-brand-500/10" accentColor="border-l-brand-500" />
+        <StatCard title="Total SKUs" value={String(inventory.length)} icon={Package} color="text-brand-500" bg="bg-brand-500/10" accentColor="border-l-brand-500" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
@@ -73,7 +88,7 @@ export default function PharmacistDashboard() {
                     <p className="text-xs text-slate-500">{rx.doctor} · {rx.time}</p>
                   </div>
                   {rx.status === 'PENDING' && (
-                    <button onClick={() => dispense(rx.id)} className="btn-primary py-1.5 px-3 text-xs shrink-0">
+                    <button onClick={() => dispense(rx.id)} className="btn-primary py-1.5 px-3 text-xs shrink-0 flex items-center gap-1.5">
                       <ShoppingCart className="w-3.5 h-3.5" /> Dispense
                     </button>
                   )}
@@ -107,25 +122,18 @@ export default function PharmacistDashboard() {
           </div>
           <div className="space-y-3">
             {filteredInventory.map((item, i) => {
-              const pct = Math.min(100, Math.round((item.stock / item.threshold) * 100));
-              const isLow = item.stock < item.threshold;
+              const isLow = item.stock < 100;
               return (
                 <div key={i} className="p-3 rounded-xl border border-slate-100 dark:border-slate-800">
                   <div className="flex justify-between items-start mb-1">
                     <p className="text-sm font-semibold text-slate-800 dark:text-white leading-tight">{item.name}</p>
-                    {isLow && <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0" />}
+                    {isLow && <AlertTriangle className="w-4 h-4 text-rose-500 shrink-0 animate-bounce" />}
                   </div>
                   <div className="flex justify-between items-center mb-1.5">
-                    <span className={`text-xs font-medium ${isLow ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                      {item.stock} {item.unit}
+                    <span className={`text-xs font-semibold ${isLow ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                      {item.stock} Units
                     </span>
-                    <span className="text-xs text-slate-400">Exp: {item.expiry}</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full">
-                    <div
-                      className={`h-1.5 rounded-full transition-all ${isLow ? 'bg-rose-500' : 'bg-emerald-500'}`}
-                      style={{ width: `${Math.min(pct, 100)}%` }}
-                    />
+                    <span className="text-xs text-slate-400">Exp: {item.expiryDate || '2027-12-01'}</span>
                   </div>
                 </div>
               );
