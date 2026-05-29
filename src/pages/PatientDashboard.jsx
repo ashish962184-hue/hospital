@@ -495,11 +495,11 @@ export default function PatientDashboard() {
               <h3 className="font-bold text-slate-800 dark:text-white text-sm border-b border-slate-100 dark:border-slate-800 pb-2 mb-3">Chronic Diseases & Allergies</h3>
               <ul className="space-y-2">
                 <li className="flex justify-between items-center text-xs">
-                  <span className="text-slate-500 font-medium">Diabetes Registry:</span>
+                  <span className="text-slate-500 dark:text-slate-300 font-medium">Diabetes Registry:</span>
                   <span className="font-bold text-brand-600">Active - Under Cardiology Control</span>
                 </li>
                 <li className="flex justify-between items-center text-xs">
-                  <span className="text-slate-500 font-medium">Penicillin Allergy:</span>
+                  <span className="text-slate-500 dark:text-slate-300 font-medium">Penicillin Allergy:</span>
                   <span className="font-bold text-rose-500">Severe Anaphylaxis Risk</span>
                 </li>
               </ul>
@@ -508,7 +508,7 @@ export default function PatientDashboard() {
               <h3 className="font-bold text-slate-800 dark:text-white text-sm border-b border-slate-100 dark:border-slate-800 pb-2 mb-3">Surgical History</h3>
               <ul className="space-y-2">
                 <li className="flex justify-between items-center text-xs">
-                  <span className="text-slate-500 font-medium">Coronary Angioplasty:</span>
+                  <span className="text-slate-500 dark:text-slate-300 font-medium">Coronary Angioplasty:</span>
                   <span className="font-semibold text-slate-600 dark:text-slate-300">COMPLETED - Oct 2025</span>
                 </li>
               </ul>
