@@ -41,8 +41,11 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Internal Server Error', error: err.message });
 });
 
-const PORT = process.env.PORT || 5000;
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+  const PORT = process.env.PORT || 5005;
+  app.listen(PORT, () => {
+    console.log(`Enterprise HMS Server running on port ${PORT}`);
+  });
+}
 
-app.listen(PORT, () => {
-  console.log(`Enterprise HMS Server running on port ${PORT}`);
-});
+export default app;
