@@ -16,94 +16,59 @@ try {
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
   try {
-    // 1. Prioritize Demo Accounts to avoid Database connection errors on local machines without PostgreSQL
+    // 1. Prioritize Simplifed 3-Role Demo Accounts for perfect demos
     if (email === 'admin@nova.com' && password === 'admin') {
       const token = jwt.sign(
-        { id: 'mock-admin', role: 'SUPER_ADMIN', name: 'System Admin' },
+        { id: 'mock-admin', role: 'ADMIN', name: 'System Admin' },
         process.env.JWT_SECRET || 'enterprise_super_secret_key_12345',
         { expiresIn: '8h' }
       );
-      return res.json({ token, user: { role: 'SUPER_ADMIN', name: 'System Admin', email } });
+      return res.json({ token, user: { role: 'ADMIN', name: 'System Admin', email } });
     }
     
     if (email === 'doctor@nova.com' && password === 'doctor') {
       const token = jwt.sign(
-        { id: 'mock-doc', role: 'DOCTOR', name: 'Dr. Sarah' },
+        { id: 'mock-doc', role: 'DOCTOR', name: 'Dr. Sarah', doctorId: 'd1' },
         process.env.JWT_SECRET || 'enterprise_super_secret_key_12345',
         { expiresIn: '8h' }
       );
-      return res.json({ token, user: { role: 'DOCTOR', name: 'Dr. Sarah', email } });
-    }
-    if (email === 'reception@nova.com' && password === 'reception') {
-      const token = jwt.sign(
-        { id: 'mock-rec', role: 'RECEPTIONIST', name: 'Front Desk' },
-        process.env.JWT_SECRET || 'enterprise_super_secret_key_12345',
-        { expiresIn: '8h' }
-      );
-      return res.json({ token, user: { role: 'RECEPTIONIST', name: 'Front Desk', email } });
-    }
-
-    if (email === 'nurse@nova.com' && password === 'nurse') {
-      const token = jwt.sign(
-        { id: 'mock-nurse', role: 'NURSE', name: 'Head Nurse' },
-        process.env.JWT_SECRET || 'enterprise_super_secret_key_12345',
-        { expiresIn: '8h' }
-      );
-      return res.json({ token, user: { role: 'NURSE', name: 'Head Nurse', email } });
-    }
-
-    if (email === 'lab@nova.com' && password === 'lab') {
-      const token = jwt.sign(
-        { id: 'mock-lab', role: 'LAB_TECH', name: 'Lab Technician' },
-        process.env.JWT_SECRET || 'enterprise_super_secret_key_12345',
-        { expiresIn: '8h' }
-      );
-      return res.json({ token, user: { role: 'LAB_TECH', name: 'Lab Technician', email } });
-    }
-
-    if (email === 'billing@nova.com' && password === 'billing') {
-      const token = jwt.sign(
-        { id: 'mock-bil', role: 'BILLING_CLERK', name: 'Finance Clerk' },
-        process.env.JWT_SECRET || 'enterprise_super_secret_key_12345',
-        { expiresIn: '8h' }
-      );
-      return res.json({ token, user: { role: 'BILLING_CLERK', name: 'Finance Clerk', email } });
+      return res.json({ token, user: { role: 'DOCTOR', name: 'Dr. Sarah', email, doctorId: 'd1' } });
     }
 
     if (email === 'patient@nova.com' && password === 'patient') {
       const token = jwt.sign(
-        { id: 'mock-pat', role: 'PATIENT', name: 'Emma Watson' },
+        { id: 'mock-pat', role: 'PATIENT', name: 'Emma Watson', patientId: 'p1' },
         process.env.JWT_SECRET || 'enterprise_super_secret_key_12345',
         { expiresIn: '8h' }
       );
-      return res.json({ token, user: { role: 'PATIENT', name: 'Emma Watson', email } });
+      return res.json({ token, user: { role: 'PATIENT', name: 'Emma Watson', email, patientId: 'p1' } });
     }
 
-    if (email === 'pharmacist@nova.com' && password === 'pharmacist') {
+    // Automatically map legacy credentials under the ADMINOperations Suite
+    if (
+      (email === 'reception@nova.com' && password === 'reception') ||
+      (email === 'nurse@nova.com' && password === 'nurse') ||
+      (email === 'lab@nova.com' && password === 'lab') ||
+      (email === 'billing@nova.com' && password === 'billing') ||
+      (email === 'pharmacist@nova.com' && password === 'pharmacist') ||
+      (email === 'director@nova.com' && password === 'director') ||
+      (email === 'radiology@nova.com' && password === 'radiology')
+    ) {
+      const nameMapping = {
+        'reception@nova.com': 'Front Desk Coordinator',
+        'nurse@nova.com': 'Head Nurse Mary',
+        'lab@nova.com': 'Laboratory Tech Robert',
+        'billing@nova.com': 'Billing Supervisor',
+        'pharmacist@nova.com': 'Chief Pharmacist Lisa',
+        'director@nova.com': 'Hospital Executive Director',
+        'radiology@nova.com': 'Dr. John (Radiology Chief)'
+      };
       const token = jwt.sign(
-        { id: 'mock-pharma', role: 'PHARMACIST', name: 'Pharma Staff' },
+        { id: 'mock-admin', role: 'ADMIN', name: nameMapping[email] },
         process.env.JWT_SECRET || 'enterprise_super_secret_key_12345',
         { expiresIn: '8h' }
       );
-      return res.json({ token, user: { role: 'PHARMACIST', name: 'Pharma Staff', email } });
-    }
-
-    if (email === 'director@nova.com' && password === 'director') {
-      const token = jwt.sign(
-        { id: 'mock-director', role: 'HOSPITAL_DIRECTOR', name: 'Hospital Director' },
-        process.env.JWT_SECRET || 'enterprise_super_secret_key_12345',
-        { expiresIn: '8h' }
-      );
-      return res.json({ token, user: { role: 'HOSPITAL_DIRECTOR', name: 'Hospital Director', email } });
-    }
-
-    if (email === 'radiology@nova.com' && password === 'radiology') {
-      const token = jwt.sign(
-        { id: 'mock-radiology', role: 'RADIOLOGIST', name: 'Dr. John (Radiologist)' },
-        process.env.JWT_SECRET || 'enterprise_super_secret_key_12345',
-        { expiresIn: '8h' }
-      );
-      return res.json({ token, user: { role: 'RADIOLOGIST', name: 'Dr. John (Radiologist)', email } });
+      return res.json({ token, user: { role: 'ADMIN', name: nameMapping[email], email } });
     }
 
     // 2. Production Database Verification (Will run if demo accounts aren't used)
@@ -112,7 +77,11 @@ router.post('/login', async (req, res) => {
     }
 
     const user = await prisma.user.findUnique({
-      where: { email }
+      where: { email },
+      include: {
+        doctorProfile: true,
+        patientProfile: true
+      }
     });
 
     if (!user) {
@@ -125,13 +94,16 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Map database roles to frontend equivalents
-    let userRole = user.role;
-    if (userRole === 'LAB_TECHNICIAN') userRole = 'LAB_TECH';
-    if (userRole === 'BILLING_STAFF') userRole = 'BILLING_CLERK';
+    // Map database roles to simplified 3-role scheme
+    let userRole = 'ADMIN';
+    if (user.role === 'PATIENT') userRole = 'PATIENT';
+    if (user.role === 'DOCTOR') userRole = 'DOCTOR';
+
+    const patientId = user.patientProfile?.id || null;
+    const doctorId = user.doctorProfile?.id || null;
 
     const token = jwt.sign(
-      { id: user.id, role: userRole, name: `${user.firstName} ${user.lastName}` },
+      { id: user.id, role: userRole, name: `${user.firstName} ${user.lastName}`, patientId, doctorId },
       process.env.JWT_SECRET || 'enterprise_super_secret_key_12345',
       { expiresIn: '8h' }
     );
@@ -142,13 +114,79 @@ router.post('/login', async (req, res) => {
         id: user.id,
         email: user.email,
         name: `${user.firstName} ${user.lastName}`,
-        role: userRole
+        role: userRole,
+        patientId,
+        doctorId
       }
     });
 
   } catch (error) {
     console.error('Authentication Error:', error.message);
     res.status(500).json({ message: 'Internal server error. Database unreachable.' });
+  }
+});
+
+// POST /api/auth/register - Modern Visitor Registration Flow
+router.post('/register', async (req, res) => {
+  const {
+    fullName,
+    dob,
+    gender,
+    bloodGroup,
+    mobile,
+    email,
+    password,
+    address,
+    emergencyContact,
+    insuranceProvider,
+    insuranceNumber
+  } = req.body;
+
+  try {
+    const patientId = `p${Date.now()}`;
+    const mrn = `MRN-${Math.floor(Math.random() * 9000) + 1000}`;
+
+    const nameParts = fullName.split(' ');
+    const firstName = nameParts[0] || '';
+    const lastName = nameParts.slice(1).join(' ') || '';
+
+    const newPatient = {
+      id: patientId,
+      mrn,
+      firstName,
+      lastName,
+      dob: dob || '1995-01-01',
+      gender: gender || 'Male',
+      bloodGroup: bloodGroup || 'O+',
+      phone: mobile || '',
+      address: address || '',
+      emergencyCont: emergencyContact || '',
+      insuranceProvider: insuranceProvider || '',
+      insuranceNumber: insuranceNumber || '',
+      allergies: [],
+      chronicDiseases: []
+    };
+
+    db.patients.push(newPatient);
+
+    const token = jwt.sign(
+      { id: `u-${patientId}`, role: 'PATIENT', name: fullName, patientId },
+      process.env.JWT_SECRET || 'enterprise_super_secret_key_12345',
+      { expiresIn: '8h' }
+    );
+
+    res.status(201).json({
+      token,
+      user: {
+        role: 'PATIENT',
+        name: fullName,
+        email,
+        patientId
+      }
+    });
+  } catch (error) {
+    console.error('Registration error:', error);
+    res.status(500).json({ message: 'Registration failed due to server error.' });
   }
 });
 
@@ -159,7 +197,14 @@ router.get('/me', async (req, res) => {
   
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'enterprise_super_secret_key_12345');
-    res.json({ user: decoded });
+    
+    // Normalise legacy roles on JWT verification too
+    let normalisedRole = decoded.role;
+    if (normalisedRole === 'SUPER_ADMIN' || normalisedRole === 'HOSPITAL_DIRECTOR' || normalisedRole === 'RECEPTIONIST' || normalisedRole === 'NURSE' || normalisedRole === 'LAB_TECH' || normalisedRole === 'PHARMACIST' || normalisedRole === 'BILLING_CLERK' || normalisedRole === 'RADIOLOGIST') {
+      normalisedRole = 'ADMIN';
+    }
+
+    res.json({ user: { ...decoded, role: normalisedRole } });
   } catch (error) {
     res.status(401).json({ message: 'Invalid token' });
   }

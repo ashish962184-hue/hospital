@@ -4,7 +4,17 @@ import { db } from '../db/mockData.js';
 const router = express.Router();
 
 router.get('/', (req, res) => {
-  const populated = db.labRequests.map(lab => ({
+  let list = db.labRequests;
+  if (req.user.role === 'PATIENT') {
+    const patientId = req.user.patientId || 'p1';
+    list = list.filter(lab => lab.patientId === patientId);
+  } else if (req.user.role === 'DOCTOR') {
+    const doctorId = req.user.doctorId || 'd1';
+    const patientIds = db.appointments.filter(a => a.doctorId === doctorId).map(a => a.patientId);
+    list = list.filter(lab => patientIds.includes(lab.patientId));
+  }
+
+  const populated = list.map(lab => ({
     ...lab,
     patient: db.patients.find(p => p.id === lab.patientId)
   }));

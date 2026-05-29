@@ -55,26 +55,27 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/" element={<Navigate to="/login" replace />} />
 
-        {/* ── Super Admin ──────────────────────────────────────────────── */}
-        <Route element={<EnterpriseLayout allowedRoles={['SUPER_ADMIN', 'HOSPITAL_DIRECTOR']} />}>
-          <Route path="/admin"     element={<AdminDashboard />} />
-          <Route path="/analytics" element={<HospitalAnalytics />} />
-        </Route>
-
-        {/* ── Receptionist ─────────────────────────────────────────────── */}
-        <Route element={<EnterpriseLayout allowedRoles={['RECEPTIONIST']} />}>
-          <Route path="/receptionist"  element={<ReceptionistDashboard />} />
-          <Route path="/appointments"  element={<Appointments />} />
+        {/* ── ADMIN Operations Suite ────────────────────────────────────── */}
+        <Route element={<EnterpriseLayout allowedRoles={['ADMIN']} />}>
+          <Route path="/admin"          element={<AdminDashboard />} />
+          <Route path="/analytics"      element={<HospitalAnalytics />} />
+          <Route path="/receptionist"   element={<ReceptionistDashboard />} />
+          <Route path="/appointments"   element={<Appointments />} />
           <Route path="/admin/patients" element={<Patients />} />
+          <Route path="/nurse"          element={<NurseDashboard />} />
+          <Route path="/ipd"            element={<NursingDashboard />} />
+          <Route path="/lab"            element={<LabDashboard />} />
+          <Route path="/reports"        element={<LabReports />} />
+          <Route path="/pharmacist"     element={<PharmacistDashboard />} />
+          <Route path="/pharmacy"       element={<Pharmacy />} />
+          <Route path="/billing-desk"   element={<BillingDashboard />} />
+          <Route path="/billing"        element={<Billing />} />
+          <Route path="/director"       element={<DirectorDashboard />} />
+          <Route path="/command-center" element={<CommandCenter />} />
+          <Route path="/radiology"      element={<RadiologyDashboard />} />
         </Route>
 
-        {/* ── Nurse ────────────────────────────────────────────────────── */}
-        <Route element={<EnterpriseLayout allowedRoles={['NURSE', 'DOCTOR']} />}>
-          <Route path="/nurse" element={<NurseDashboard />} />
-          <Route path="/ipd"   element={<NursingDashboard />} />
-        </Route>
-
-        {/* ── Doctor ───────────────────────────────────────────────────── */}
+        {/* ── DOCTOR Workspace ─────────────────────────────────────────── */}
         <Route element={<EnterpriseLayout allowedRoles={['DOCTOR']} />}>
           <Route path="/doctor"               element={<DoctorDashboard />} />
           <Route path="/doctor/patients"      element={<Patients />} />
@@ -82,40 +83,21 @@ function App() {
           <Route path="/doctor/appointments"  element={<Appointments />} />
         </Route>
 
-        {/* ── Lab Tech ─────────────────────────────────────────────────── */}
-        <Route element={<EnterpriseLayout allowedRoles={['LAB_TECH', 'DOCTOR']} />}>
-          <Route path="/lab"     element={<LabDashboard />} />
-          <Route path="/reports" element={<LabReports />} />
-        </Route>
-
-        {/* ── Pharmacist ───────────────────────────────────────────────── */}
-        <Route element={<EnterpriseLayout allowedRoles={['PHARMACIST']} />}>
-          <Route path="/pharmacist" element={<PharmacistDashboard />} />
-          <Route path="/pharmacy"   element={<Pharmacy />} />
-        </Route>
-
-        {/* ── Billing Clerk ─────────────────────────────────────────────── */}
-        <Route element={<EnterpriseLayout allowedRoles={['BILLING_CLERK']} />}>
-          <Route path="/billing-desk" element={<BillingDashboard />} />
-          <Route path="/billing"      element={<Billing />} />
-        </Route>
-
-        {/* ── Patient Portal ───────────────────────────────────────────── */}
+        {/* ── Practo-Style PATIENT Portal ───────────────────────────────── */}
         <Route element={<EnterpriseLayout allowedRoles={['PATIENT']} />}>
-          <Route path="/patient"              element={<PatientDashboard />} />
-          <Route path="/patient/appointments" element={<Appointments />} />
-          <Route path="/patient/results"      element={<LabReports />} />
-        </Route>
-
-        {/* ── Hospital Director ────────────────────────────────────────── */}
-        <Route element={<EnterpriseLayout allowedRoles={['HOSPITAL_DIRECTOR']} />}>
-          <Route path="/director"        element={<DirectorDashboard />} />
-          <Route path="/command-center"  element={<CommandCenter />} />
-        </Route>
-
-        {/* ── Radiologist ─────────────────────────────────────────────── */}
-        <Route element={<EnterpriseLayout allowedRoles={['RADIOLOGIST']} />}>
-          <Route path="/radiology" element={<RadiologyDashboard />} />
+          <Route path="/patient"                  element={<PatientDashboard />} />
+          <Route path="/patient/appointments"     element={<PatientDashboard />} />
+          <Route path="/patient/records"          element={<PatientDashboard />} />
+          <Route path="/patient/results"          element={<PatientDashboard />} />
+          <Route path="/patient/prescriptions"    element={<PatientDashboard />} />
+          <Route path="/patient/billing"          element={<PatientDashboard />} />
+          <Route path="/patient/reminders"        element={<PatientDashboard />} />
+          <Route path="/patient/queue"            element={<PatientDashboard />} />
+          <Route path="/patient/qr"               element={<PatientDashboard />} />
+          <Route path="/patient/symptom-checker"  element={<PatientDashboard />} />
+          <Route path="/patient/insurance"        element={<PatientDashboard />} />
+          <Route path="/patient/documents"        element={<PatientDashboard />} />
+          <Route path="/patient/settings"         element={<PatientDashboard />} />
         </Route>
 
         {/* ── Shared / All Authenticated ───────────────────────────────── */}

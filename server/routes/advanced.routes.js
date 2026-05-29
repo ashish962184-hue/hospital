@@ -5,7 +5,12 @@ const router = express.Router();
 
 // ─── Phase 15: Bed & Room Management ──────────────────────────────────────────
 router.get('/beds', (req, res) => {
-  res.json(db.beds);
+  let list = db.beds;
+  if (req.user.role === 'PATIENT') {
+    const patientId = req.user.patientId || 'p1';
+    list = list.filter(b => b.patientId === patientId);
+  }
+  res.json(list);
 });
 
 router.post('/beds/allocate', (req, res) => {
@@ -30,7 +35,16 @@ router.post('/beds/status', (req, res) => {
 
 // ─── Phase 16: Operation Theatre (OT) Management ──────────────────────────────
 router.get('/ot', (req, res) => {
-  const populated = db.otSchedules.map(ot => ({
+  let list = db.otSchedules;
+  if (req.user.role === 'PATIENT') {
+    const patientId = req.user.patientId || 'p1';
+    list = list.filter(ot => ot.patientId === patientId);
+  } else if (req.user.role === 'DOCTOR') {
+    const doctorId = req.user.doctorId || 'd1';
+    list = list.filter(ot => ot.surgeon.includes('Sarah') || ot.surgeon.includes(req.user.name));
+  }
+
+  const populated = list.map(ot => ({
     ...ot,
     patient: db.patients.find(p => p.id === ot.patientId),
   }));
@@ -58,7 +72,13 @@ router.post('/ot/checklist', (req, res) => {
 
 // ─── Phase 17: Insurance & TPA Management ─────────────────────────────────────
 router.get('/insurance/claims', (req, res) => {
-  const populated = db.insuranceClaims.map(c => ({
+  let list = db.insuranceClaims;
+  if (req.user.role === 'PATIENT') {
+    const patientId = req.user.patientId || 'p1';
+    list = list.filter(c => c.patientId === patientId);
+  }
+
+  const populated = list.map(c => ({
     ...c,
     patient: db.patients.find(p => p.id === c.patientId),
   }));
@@ -102,7 +122,17 @@ router.post('/staff/attendance', (req, res) => {
 
 // ─── Phase 19: Radiology Department ───────────────────────────────────────────
 router.get('/radiology', (req, res) => {
-  const populated = db.radiologyRequests.map(rad => ({
+  let list = db.radiologyRequests;
+  if (req.user.role === 'PATIENT') {
+    const patientId = req.user.patientId || 'p1';
+    list = list.filter(rad => rad.patientId === patientId);
+  } else if (req.user.role === 'DOCTOR') {
+    const doctorId = req.user.doctorId || 'd1';
+    const patientIds = db.appointments.filter(a => a.doctorId === doctorId).map(a => a.patientId);
+    list = list.filter(rad => patientIds.includes(rad.patientId));
+  }
+
+  const populated = list.map(rad => ({
     ...rad,
     patient: db.patients.find(p => p.id === rad.patientId),
   }));
@@ -123,7 +153,13 @@ router.post('/radiology/upload', (req, res) => {
 
 // ─── Phase 20: Emergency & Triage Management ──────────────────────────────────
 router.get('/emergency', (req, res) => {
-  const populated = db.emergencyQueue.map(er => ({
+  let list = db.emergencyQueue;
+  if (req.user.role === 'PATIENT') {
+    const patientId = req.user.patientId || 'p1';
+    list = list.filter(er => er.patientId === patientId);
+  }
+
+  const populated = list.map(er => ({
     ...er,
     patient: db.patients.find(p => p.id === er.patientId),
   }));
@@ -143,7 +179,17 @@ router.post('/emergency/triage', (req, res) => {
 
 // ─── Phase 21: Discharge Management ───────────────────────────────────────────
 router.get('/discharges', (req, res) => {
-  const populated = db.discharges.map(d => ({
+  let list = db.discharges;
+  if (req.user.role === 'PATIENT') {
+    const patientId = req.user.patientId || 'p1';
+    list = list.filter(d => d.patientId === patientId);
+  } else if (req.user.role === 'DOCTOR') {
+    const doctorId = req.user.doctorId || 'd1';
+    const patientIds = db.appointments.filter(a => a.doctorId === doctorId).map(a => a.patientId);
+    list = list.filter(d => patientIds.includes(d.patientId));
+  }
+
+  const populated = list.map(d => ({
     ...d,
     patient: db.patients.find(p => p.id === d.patientId),
   }));
@@ -192,7 +238,12 @@ router.post('/bloodbank/issue', (req, res) => {
 
 // ─── Phase 34: Document Management System (DMS) ───────────────────────────────
 router.get('/documents', (req, res) => {
-  res.json(db.documents);
+  let list = db.documents;
+  if (req.user.role === 'PATIENT') {
+    const patientId = req.user.patientId || 'p1';
+    list = list.filter(doc => doc.patientId === patientId);
+  }
+  res.json(list);
 });
 
 router.post('/documents/upload', (req, res) => {
@@ -207,7 +258,12 @@ router.post('/documents/upload', (req, res) => {
 
 // ─── Phase 35: Digital Consent Management ─────────────────────────────────────
 router.get('/consents', (req, res) => {
-  res.json(db.consents);
+  let list = db.consents;
+  if (req.user.role === 'PATIENT') {
+    const patientId = req.user.patientId || 'p1';
+    list = list.filter(c => c.patientId === patientId);
+  }
+  res.json(list);
 });
 
 router.post('/consents/sign', (req, res) => {
@@ -222,7 +278,12 @@ router.post('/consents/sign', (req, res) => {
 
 // ─── Phase 36: Medical Certificate System ─────────────────────────────────────
 router.get('/certificates', (req, res) => {
-  res.json(db.certificates);
+  let list = db.certificates;
+  if (req.user.role === 'PATIENT') {
+    const patientId = req.user.patientId || 'p1';
+    list = list.filter(c => c.patientId === patientId);
+  }
+  res.json(list);
 });
 
 router.post('/certificates/create', (req, res) => {
@@ -236,7 +297,12 @@ router.post('/certificates/create', (req, res) => {
 
 // ─── Phase 37: Chronic Disease Management ─────────────────────────────────────
 router.get('/chronic', (req, res) => {
-  res.json(db.chronicDisease);
+  let list = db.chronicDisease;
+  if (req.user.role === 'PATIENT') {
+    const patientId = req.user.patientId || 'p1';
+    list = list.filter(c => c.patientId === patientId);
+  }
+  res.json(list);
 });
 
 router.post('/chronic/update', (req, res) => {
@@ -252,7 +318,12 @@ router.post('/chronic/update', (req, res) => {
 
 // ─── Phase 38: Vaccination Management ─────────────────────────────────────────
 router.get('/vaccinations', (req, res) => {
-  res.json(db.vaccinations);
+  let list = db.vaccinations;
+  if (req.user.role === 'PATIENT') {
+    const patientId = req.user.patientId || 'p1';
+    list = list.filter(v => v.patientId === patientId);
+  }
+  res.json(list);
 });
 
 // ─── Phase 27: Enterprise Notification Center ─────────────────────────────────

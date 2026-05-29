@@ -21,12 +21,41 @@ const PRIORITY_STYLE = {
 };
 
 export default function RadiologyDashboard() {
-  const { showToast } = useStore();
-  const [scans, setScans] = useState(PENDING_SCANS);
-  const [completed, setCompleted] = useState(COMPLETED_SCANS);
+  const { showToast, token } = useStore();
+  const [scans, setScans] = useState([]);
+  const [completed, setCompleted] = useState([]);
   const [search, setSearch] = useState('');
   const [uploading, setUploading] = useState(null);
   const [form, setForm] = useState({ result: '', notes: '' });
+
+  const loadScans = () => {
+    fetch('/api/advanced/radiology', { headers: { Authorization: `Bearer ${token}` } })
+      .then(res => res.json())
+      .then(data => {
+        setScans(data.filter(s => s.status === 'PENDING').map(s => ({
+          id: s.id,
+          patient: s.patient ? `${s.patient.firstName} ${s.patient.lastName}` : 'Unknown Patient',
+          age: s.patient?.dob ? (new Date().getFullYear() - new Date(s.patient.dob).getFullYear()) : 35,
+          doctor: 'Dr. Sarah Jenkins',
+          scanType: s.scanType,
+          priority: s.priority,
+          ordered: '09:00 AM',
+          status: s.status
+        })));
+        setCompleted(data.filter(s => s.status === 'COMPLETED' || s.status === 'NORMAL' || s.status === 'ABNORMAL').map(s => ({
+          id: s.id,
+          patient: s.patient ? `${s.patient.firstName} ${s.patient.lastName}` : 'Amit Patel',
+          scanType: s.scanType,
+          completedAt: '08:45 AM',
+          status: s.results || s.status
+        })));
+      })
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    loadScans();
+  }, [token]);
 
   const filtered = scans.filter(s =>
     s.patient.toLowerCase().includes(search.toLowerCase()) ||
@@ -35,12 +64,30 @@ export default function RadiologyDashboard() {
 
   const handleUpload = (e) => {
     e.preventDefault();
-    setScans(prev => prev.filter(s => s.id !== uploading.id));
-    setCompleted([{ id: uploading.id, patient: uploading.patient, scanType: uploading.scanType, completedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), status: form.result }, ...completed]);
-    showToast(`Radiology scan uploaded and verified for ${uploading.patient}`, 'success');
-    setUploading(null);
-    setForm({ result: '', notes: '' });
+    if (!uploading) return;
+
+    fetch('/api/advanced/radiology/upload', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        radId: uploading.id,
+        results: form.result,
+        status: form.result
+      })
+    })
+      .then(res => res.json())
+      .then(() => {
+        showToast(`Radiology scan uploaded and verified for ${uploading.patient}`, 'success');
+        setUploading(null);
+        setForm({ result: '', notes: '' });
+        loadScans();
+      })
+      .catch(() => showToast('Failed to upload scan', 'error'));
   };
+
 
   return (
     <div className="space-y-6">

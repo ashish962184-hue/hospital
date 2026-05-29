@@ -7,17 +7,18 @@ import StatCard from '../components/StatCard';
 import { useStore } from '../store';
 
 const MEDS_DUE = [
-  { patient: 'Emma Watson', med: 'Aspirin 150mg', time: '09:00 AM', given: true },
-  { patient: 'John Doe', med: 'Clopidogrel 75mg', time: '10:00 AM', given: false },
-  { patient: 'Jane Roe', med: 'Tramadol 50mg', time: '11:00 AM', given: false },
+  { patient: 'Emma Watson', med: 'Aspirin 150mg', time: '09:00 AM', given: true, ward: 'Cardiology' },
+  { patient: 'John Doe', med: 'Clopidogrel 75mg', time: '10:00 AM', given: false, ward: 'ICU' },
+  { patient: 'Jane Roe', med: 'Tramadol 50mg', time: '11:00 AM', given: false, ward: 'Neurology' },
 ];
 
 export default function NurseDashboard() {
-  const { showToast, token } = useStore();
+  const { showToast, token, user } = useStore();
   const [beds, setBeds] = useState([]);
   const [patients, setPatients] = useState([]);
-  const [meds, setMeds] = useState(MEDS_DUE);
+  const [meds, setMeds] = useState(MEDS_DUE.filter(m => m.ward === 'Cardiology'));
   const [selected, setSelected] = useState(null);
+
   const [isVitalsOpen, setIsVitalsOpen] = useState(false);
   const [vitalsForm, setVitalsForm] = useState({ bp: '120/80', spo2: '98%', pulse: '72', temp: '98.6°F' });
 

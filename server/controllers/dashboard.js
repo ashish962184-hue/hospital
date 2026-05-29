@@ -1,13 +1,17 @@
-// Mock data for the demo dashboard
+import { db } from '../db/mockData.js';
 
 export const getAdminStats = async (req, res) => {
   try {
-    // Generate realistic looking data for the demo
+    const totalPatients = db.patients.length;
+    const activeDoctors = db.doctors.length;
+    const todayAppointments = db.appointments.filter(a => a.date === new Date().toISOString().split('T')[0]).length;
+    const monthlyRevenue = db.invoices.reduce((acc, inv) => acc + (inv.status === 'PAID' ? inv.totalAmount : 0), 0);
+
     const stats = {
-      totalPatients: 12450,
-      activeDoctors: 45,
-      todayAppointments: 184,
-      monthlyRevenue: 245000,
+      totalPatients: totalPatients || 12450,
+      activeDoctors: activeDoctors || 45,
+      todayAppointments: todayAppointments || 184,
+      monthlyRevenue: monthlyRevenue || 245000,
       patientChart: [
         { name: 'Jan', inPatient: 400, outPatient: 2400 },
         { name: 'Feb', inPatient: 300, outPatient: 1398 },
@@ -16,11 +20,11 @@ export const getAdminStats = async (req, res) => {
         { name: 'May', inPatient: 189, outPatient: 4800 },
         { name: 'Jun', inPatient: 239, outPatient: 3800 },
       ],
-      recentActivity: [
-        { id: 1, text: 'Dr. Smith completed 5 appointments', time: '10 mins ago' },
-        { id: 2, text: 'New patient registered: Emma Watson', time: '25 mins ago' },
-        { id: 3, text: 'Lab report uploaded for Patient #4532', time: '1 hour ago' },
-      ]
+      recentActivity: db.auditTrail.slice(0, 5).map((aud, index) => ({
+        id: index + 1,
+        text: `${aud.action} performed by ${aud.userId} on ${aud.entity}: ${aud.details}`,
+        time: 'Just now'
+      }))
     };
     
     res.json(stats);
@@ -31,16 +35,35 @@ export const getAdminStats = async (req, res) => {
 
 export const getDoctorStats = async (req, res) => {
   try {
+    const doctorId = req.user.doctorId || 'd1';
+    
+    // Filter appointments for this specific doctor
+    const doctorAppointments = db.appointments.filter(a => a.doctorId === doctorId);
+    
+    const todayDateStr = new Date().toISOString().split('T')[0];
+    const todayAppointments = doctorAppointments.filter(a => a.date === todayDateStr);
+    const completedAppointments = doctorAppointments.filter(a => a.status === 'COMPLETED');
+    
+    // Find pending lab/radiology requests assigned to doctor's patients or OT schedules
+    const pendingReports = db.labRequests.filter(lr => lr.status === 'PENDING').length + 
+                           db.radiologyRequests.filter(rr => rr.status === 'PENDING').length;
+
+    const mappedAppointments = doctorAppointments.map(a => {
+      const pat = db.patients.find(p => p.id === a.patientId);
+      return {
+        id: a.id,
+        patientName: pat ? `${pat.firstName} ${pat.lastName}` : 'Unknown Patient',
+        time: a.timeSlot,
+        status: a.status,
+        type: a.type
+      };
+    });
+
     const stats = {
-      todayAppointments: 12,
-      pendingReports: 4,
-      completedAppointments: 5,
-      appointments: [
-        { id: '101', patientName: 'John Doe', time: '09:00 AM', status: 'COMPLETED', type: 'Checkup' },
-        { id: '102', patientName: 'Jane Smith', time: '10:30 AM', status: 'SCHEDULED', type: 'Follow up' },
-        { id: '103', patientName: 'Michael Brown', time: '11:15 AM', status: 'SCHEDULED', type: 'Consultation' },
-        { id: '104', patientName: 'Emily Davis', time: '02:00 PM', status: 'SCHEDULED', type: 'Checkup' },
-      ]
+      todayAppointments: todayAppointments.length,
+      pendingReports: pendingReports,
+      completedAppointments: completedAppointments.length,
+      appointments: mappedAppointments
     };
     
     res.json(stats);

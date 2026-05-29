@@ -9,97 +9,69 @@ import {
   CreditCard,
   Bot,
   X,
-  Bed
+  Bed,
+  Pill,
+  Clock,
+  QrCode,
+  Shield,
+  Bell,
+  Heart,
+  FolderOpen
 } from 'lucide-react';
 import { useStore } from '../store';
 
-import { Pill } from 'lucide-react';
-
 const getNavItems = (role) => {
   const common = [
-    { name: 'AI Assistant', path: '/ai-assistant', icon: Bot },
+    { name: 'Medical AI Support', path: '/ai-assistant', icon: Bot },
   ];
 
-  switch (role) {
-    case 'SUPER_ADMIN':
-      return [
-        { name: 'Dashboard',          path: '/admin',     icon: LayoutDashboard },
-        { name: 'Hospital Analytics', path: '/analytics', icon: Activity },
-        ...common,
-      ];
-
-    case 'RECEPTIONIST':
-      return [
-        { name: 'Dashboard',    path: '/receptionist',  icon: LayoutDashboard },
-        { name: 'Appointments', path: '/appointments',  icon: Calendar },
-        { name: 'Patients',     path: '/admin/patients',icon: Users },
-        ...common,
-      ];
-
-    case 'NURSE':
-      return [
-        { name: 'Dashboard',    path: '/nurse',          icon: LayoutDashboard },
-        { name: 'IPD Wards',    path: '/ipd',            icon: Bed },
-        { name: 'Patients',     path: '/admin/patients', icon: Users },
-        ...common,
-      ];
-
-    case 'DOCTOR':
-      return [
-        { name: 'Dashboard',       path: '/doctor',                icon: LayoutDashboard },
-        { name: 'Appointments',    path: '/doctor/appointments',   icon: Calendar },
-        { name: 'Patients',        path: '/doctor/patients',       icon: Users },
-        { name: 'Prescriptions',   path: '/doctor/prescriptions',  icon: FileText },
-        { name: 'Lab Reports',     path: '/reports',               icon: Activity },
-        { name: 'Inpatient (IPD)', path: '/ipd',                   icon: Bed },
-        ...common,
-      ];
-
-    case 'LAB_TECH':
-      return [
-        { name: 'Dashboard',   path: '/lab',     icon: LayoutDashboard },
-        { name: 'All Reports', path: '/reports', icon: Activity },
-        ...common,
-      ];
-
-    case 'PHARMACIST':
-      return [
-        { name: 'Dashboard', path: '/pharmacist', icon: LayoutDashboard },
-        { name: 'Pharmacy',  path: '/pharmacy',   icon: Pill },
-        ...common,
-      ];
-
-    case 'BILLING_CLERK':
-      return [
-        { name: 'Dashboard',       path: '/billing-desk', icon: LayoutDashboard },
-        { name: 'Billing & Finance',path: '/billing',     icon: CreditCard },
-      ];
-
-    case 'PATIENT':
-      return [
-        { name: 'My Dashboard',    path: '/patient',              icon: LayoutDashboard },
-        { name: 'My Appointments', path: '/patient/appointments', icon: Calendar },
-        { name: 'My Lab Results',  path: '/patient/results',      icon: Activity },
-        ...common,
-      ];
-
-    case 'HOSPITAL_DIRECTOR':
-      return [
-        { name: 'Executive Portal',   path: '/director',       icon: LayoutDashboard },
-        { name: 'Command Center',     path: '/command-center', icon: Activity },
-        ...common,
-      ];
-
-    case 'RADIOLOGIST':
-      return [
-        { name: 'Radiology Board',    path: '/radiology',      icon: LayoutDashboard },
-        { name: 'Imaging Reports',    path: '/reports',        icon: FileText },
-        ...common,
-      ];
-
-    default:
-      return [];
+  if (role === 'ADMIN' || role === 'SUPER_ADMIN' || role === 'HOSPITAL_DIRECTOR') {
+    return [
+      { name: 'Operations Suite',    path: '/admin',          icon: LayoutDashboard },
+      { name: 'Hospital Analytics',  path: '/analytics',      icon: Activity },
+      { name: 'Patient Management',  path: '/admin/patients', icon: Users },
+      { name: 'Appointment Queue',   path: '/appointments',   icon: Calendar },
+      { name: 'Inpatient Wards',     path: '/ipd',            icon: Bed },
+      { name: 'Laboratory Suite',    path: '/lab',            icon: Activity },
+      { name: 'Pharmacy Suite',      path: '/pharmacy',       icon: Pill },
+      { name: 'Radiology Suite',     path: '/radiology',      icon: FolderOpen },
+      { name: 'Executive Portal',    path: '/director',       icon: Heart },
+      { name: 'Command Center',      path: '/command-center', icon: Shield },
+      ...common,
+    ];
   }
+
+  if (role === 'DOCTOR') {
+    return [
+      { name: 'My Dashboard',       path: '/doctor',                icon: LayoutDashboard },
+      { name: 'My Appointments',    path: '/doctor/appointments',   icon: Calendar },
+      { name: 'Assigned Patients',  path: '/doctor/patients',       icon: Users },
+      { name: 'Digital Scripts',    path: '/doctor/prescriptions',  icon: FileText },
+      { name: 'Clinical Reports',   path: '/reports',               icon: Activity },
+      { name: 'Inpatient (IPD)',    path: '/ipd',                   icon: Bed },
+      ...common,
+    ];
+  }
+
+  if (role === 'PATIENT') {
+    return [
+      { name: 'Portal Dashboard',    path: '/patient',              icon: LayoutDashboard },
+      { name: 'Book Appointments',   path: '/patient/appointments', icon: Calendar },
+      { name: 'Health Records',      path: '/patient/records',      icon: Heart },
+      { name: 'Lab Reports',         path: '/patient/results',      icon: Activity },
+      { name: 'My Prescriptions',    path: '/patient/prescriptions',icon: Pill },
+      { name: 'Bills & Payments',    path: '/patient/billing',      icon: CreditCard },
+      { name: 'Reminders',           path: '/patient/reminders',    icon: Bell },
+      { name: 'Queue Status',        path: '/patient/queue',        icon: Clock },
+      { name: 'My QR Card',          path: '/patient/qr',           icon: QrCode },
+      { name: 'AI Symptom Checker',  path: '/patient/symptom-checker', icon: Bot },
+      { name: 'My Insurance',        path: '/patient/insurance',    icon: Shield },
+      { name: 'My Documents',        path: '/patient/documents',    icon: FolderOpen },
+      { name: 'Profile Settings',    path: '/patient/settings',     icon: Settings },
+    ];
+  }
+
+  return [];
 };
 
 

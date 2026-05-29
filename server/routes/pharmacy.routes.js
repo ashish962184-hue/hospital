@@ -7,13 +7,19 @@ router.get('/inventory', (req, res) => {
   res.json(db.pharmacyInventory);
 });
 
+let prescriptionsList = [
+  { id: 'RX-001', patientId: 'p1', patient: 'Emma Watson', doctor: 'Dr. Sarah Jenkins', medicines: ['Amoxicillin 500mg', 'Paracetamol 650mg'], status: 'PENDING', time: '09:15 AM' },
+  { id: 'RX-002', patientId: 'p2', patient: 'John Doe', doctor: 'Dr. Michael Chen', medicines: ['Lisinopril 10mg'], status: 'DISPENSED', time: '09:45 AM' },
+];
+
 // GET /api/pharmacy/prescriptions
 router.get('/prescriptions', (req, res) => {
-  // Pre-populate with mock collection or dynamically created ones
-  res.json([
-    { id: 'RX-001', patient: 'Emma Watson', doctor: 'Dr. Sarah Jenkins', medicines: ['Amoxicillin 500mg', 'Paracetamol 650mg'], status: 'PENDING', time: '09:15 AM' },
-    { id: 'RX-002', patient: 'John Doe', doctor: 'Dr. Michael Chen', medicines: ['Lisinopril 10mg'], status: 'DISPENSED', time: '09:45 AM' },
-  ]);
+  let list = prescriptionsList;
+  if (req.user.role === 'PATIENT') {
+    const patientId = req.user.patientId || 'p1';
+    list = list.filter(rx => rx.patientId === patientId);
+  }
+  res.json(list);
 });
 
 // POST /api/pharmacy/dispense/:id
