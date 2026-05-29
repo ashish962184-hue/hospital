@@ -54,7 +54,7 @@ export default function Prescriptions() {
             <p className="text-[#ccfbf1] text-sm">Phone: +1 800-555-0199</p>
           </div>
           <div className="text-right">
-            <img src="/logo.png" alt="CarePulse Logo" className="w-16 h-16 bg-white object-contain rounded-2xl p-1 shadow-lg ml-auto mb-2" />
+            <img src="/logo.png" alt="CarePulse Logo" className="w-16 h-16 object-cover rounded-full shadow-lg ml-auto mb-2" />
           </div>
         </div>
 
