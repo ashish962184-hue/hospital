@@ -49,14 +49,12 @@ export default function Prescriptions() {
         {/* Prescription Header */}
         <div className="bg-[#14b8a6] text-white p-6 md:p-8 flex justify-between items-center">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight">NovaHealth General Hospital</h2>
+            <h2 className="text-2xl font-bold tracking-tight">CarePulse General Hospital</h2>
             <p className="text-[#ccfbf1] text-sm mt-1">123 Health Avenue, Medical District, NY 10001</p>
             <p className="text-[#ccfbf1] text-sm">Phone: +1 800-555-0199</p>
           </div>
           <div className="text-right">
-            <div className="w-16 h-16 bg-white text-[#0f766e] rounded-2xl flex items-center justify-center font-bold text-3xl shadow-lg ml-auto mb-2">
-              H
-            </div>
+            <img src="/logo.png" alt="CarePulse Logo" className="w-16 h-16 bg-white object-contain rounded-2xl p-1 shadow-lg ml-auto mb-2" />
           </div>
         </div>
 

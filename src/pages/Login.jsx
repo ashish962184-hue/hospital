@@ -89,11 +89,9 @@ export default function Login() {
 
           {/* Logo */}
           <div className="flex flex-col items-center mb-7">
-            <div className="w-16 h-16 bg-brand-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-brand-500/30 mb-4 transform -rotate-6 hover:rotate-0 transition-transform duration-300">
-              <Stethoscope className="w-8 h-8" />
-            </div>
+            <img src="/logo.png" alt="CarePulse Logo" className="w-16 h-16 object-contain rounded-2xl shadow-lg shadow-brand-500/20 mb-4 transform -rotate-6 hover:rotate-0 transition-transform duration-300 bg-white p-1" />
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Welcome Back</h1>
-            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Sign in to NovaHealth</p>
+            <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Sign in to CarePulse</p>
           </div>
 
           {/* Form */}

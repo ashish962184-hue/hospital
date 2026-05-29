@@ -117,11 +117,9 @@ export default function Sidebar({ userRole }) {
         </button>
 
         <div className="p-6 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-brand-500 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-brand-500/40">
-            H
-          </div>
+          <img src="/logo.png" alt="CarePulse Logo" className="w-10 h-10 object-contain rounded-xl shadow-lg shadow-brand-500/20 bg-white p-0.5" />
           <div>
-            <h1 className="font-bold text-lg leading-tight text-slate-900 dark:text-white">NovaHealth</h1>
+            <h1 className="font-bold text-lg leading-tight text-slate-900 dark:text-white">CarePulse</h1>
             <p className="text-xs text-slate-500 dark:text-slate-400">Management System</p>
           </div>
         </div>
