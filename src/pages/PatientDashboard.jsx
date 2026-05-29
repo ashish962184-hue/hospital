@@ -500,7 +500,7 @@ export default function PatientDashboard() {
                 </li>
                 <li className="flex justify-between items-center text-xs">
                   <span className="text-slate-500 font-medium">Penicillin Allergy:</span>
-                  <span className="font-bold text-rose-500">SEVERE SEED TRIGGER</span>
+                  <span className="font-bold text-rose-500">Severe Anaphylaxis Risk</span>
                 </li>
               </ul>
             </div>
