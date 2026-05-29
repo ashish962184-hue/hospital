@@ -1,10 +1,16 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
-import { PrismaClient } from '@prisma/client';
 
 const router = express.Router();
-const prisma = new PrismaClient();
+
+let prisma;
+try {
+  const { PrismaClient } = await import('@prisma/client');
+  prisma = new PrismaClient();
+} catch (e) {
+  console.log('Prisma client not initialized, running in mock-data mode.');
+}
 
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
@@ -101,6 +107,10 @@ router.post('/login', async (req, res) => {
     }
 
     // 2. Production Database Verification (Will run if demo accounts aren't used)
+    if (!prisma) {
+      return res.status(500).json({ message: 'Database connection offline. Please use a demo account.' });
+    }
+
     const user = await prisma.user.findUnique({
       where: { email }
     });
