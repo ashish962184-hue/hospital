@@ -19,8 +19,8 @@ export const db = {
   ],
 
   labRequests: [
-    { id: 'l1', patientId: 'p1', testName: 'Complete Blood Count', category: 'Pathology', status: 'COMPLETED', results: 'Normal' },
-    { id: 'l2', patientId: 'p2', testName: 'Chest X-Ray', category: 'Radiology', status: 'PENDING', results: null },
+    { id: 'l1', patientId: 'p1', testName: 'Complete Blood Count', category: 'Pathology', status: 'COMPLETED', results: 'Normal', priority: 'ROUTINE' },
+    { id: 'l2', patientId: 'p2', testName: 'Chest X-Ray', category: 'Radiology', status: 'PENDING', results: null, priority: 'STAT' },
   ],
 
   pharmacyInventory: [

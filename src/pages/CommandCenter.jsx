@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { 
   Users, Activity, Bed, ShieldAlert,
-  Flame, Calendar, CreditCard, Droplets, MapPin, Bus
+  Flame, Calendar, CreditCard, Droplets, MapPin, Bus, CheckCircle
 } from 'lucide-react';
 import { useStore } from '../store';
 import StatCard from '../components/StatCard';

@@ -77,7 +77,7 @@ export default function DirectorDashboard() {
                     <stop offset="95%" stopColor="#14b8a6" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" dark={{ stroke: '#334155' }} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} dy={10} />
                 <YAxis axisLine={false} tickLine={false} tick={{fill: '#64748b', fontSize: 12}} />
                 <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', backgroundColor: 'var(--card-bg)' }} />
