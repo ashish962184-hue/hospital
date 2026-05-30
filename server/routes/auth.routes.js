@@ -72,6 +72,33 @@ router.post('/login', async (req, res) => {
       return res.json({ token, user: { role: 'ADMIN', name: nameMapping[email], email } });
     }
 
+    // Check in-memory mock users database first (for newly registered accounts in mock mode)
+    db.users = db.users || [];
+    const mockUser = db.users.find(u => u.email === email);
+    if (mockUser) {
+      const valid = await bcrypt.compare(password, mockUser.password).catch(() => false) || password === mockUser.password;
+      if (valid) {
+        const token = jwt.sign(
+          { id: mockUser.id, role: mockUser.role, name: mockUser.name, patientId: mockUser.patientId, doctorId: mockUser.doctorId },
+          process.env.JWT_SECRET || 'enterprise_super_secret_key_12345',
+          { expiresIn: '8h' }
+        );
+        return res.json({
+          token,
+          user: {
+            id: mockUser.id,
+            email: mockUser.email,
+            name: mockUser.name,
+            role: mockUser.role,
+            patientId: mockUser.patientId,
+            doctorId: mockUser.doctorId
+          }
+        });
+      } else {
+        return res.status(401).json({ message: 'Invalid credentials' });
+      }
+    }
+
     // 2. Production Database Verification (Will run if demo accounts aren't used)
     if (!prisma) {
       return res.status(500).json({ message: 'Database connection offline. Please use a demo account.' });
@@ -170,6 +197,18 @@ router.post('/register', async (req, res) => {
     };
 
     db.patients.push(newPatient);
+
+    // Store in mock users list for persistent mock-login
+    db.users = db.users || [];
+    const hashedPassword = await bcrypt.hash(password, 10);
+    db.users.push({
+      id: `u-${patientId}`,
+      email,
+      password: hashedPassword,
+      name: fullName,
+      role: 'PATIENT',
+      patientId
+    });
 
     const token = jwt.sign(
       { id: `u-${patientId}`, role: 'PATIENT', name: fullName, patientId },
