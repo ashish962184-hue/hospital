@@ -1,7 +1,35 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcrypt';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { db } from '../db/mockData.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const dbFilePath = path.join(__dirname, '../db/persistentUsers.json');
+
+const getPersistentUsers = () => {
+  try {
+    if (fs.existsSync(dbFilePath)) {
+      return JSON.parse(fs.readFileSync(dbFilePath, 'utf8'));
+    }
+  } catch (e) {
+    console.error('Error reading persistent users file', e);
+  }
+  return [];
+};
+
+const savePersistentUser = (user) => {
+  try {
+    const users = getPersistentUsers();
+    users.push(user);
+    fs.writeFileSync(dbFilePath, JSON.stringify(users, null, 2), 'utf8');
+  } catch (e) {
+    console.error('Error saving persistent user', e);
+  }
+};
 
 const router = express.Router();
 
@@ -73,8 +101,8 @@ router.post('/login', async (req, res) => {
     }
 
     // Check in-memory mock users database first (for newly registered accounts in mock mode)
-    db.users = db.users || [];
-    const mockUser = db.users.find(u => u.email === email);
+    const persistentUsers = getPersistentUsers();
+    const mockUser = persistentUsers.find(u => u.email === email);
     if (mockUser) {
       const valid = await bcrypt.compare(password, mockUser.password).catch(() => false) || password === mockUser.password;
       if (valid) {
@@ -199,9 +227,8 @@ router.post('/register', async (req, res) => {
     db.patients.push(newPatient);
 
     // Store in mock users list for persistent mock-login
-    db.users = db.users || [];
     const hashedPassword = await bcrypt.hash(password, 10);
-    db.users.push({
+    savePersistentUser({
       id: `u-${patientId}`,
       email,
       password: hashedPassword,
